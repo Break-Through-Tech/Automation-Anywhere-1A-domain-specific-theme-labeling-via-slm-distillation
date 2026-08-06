@@ -53,73 +53,107 @@ Automation Anywhere is a global leader in Intelligent Automation, specializing i
 
 ## 🎯 The Challenge
 ### Project Summary
-This project explores knowledge distillation by using high-performing Large Language Models (LLMs) to label support datasets and train compact Small Language Models (SLMs). By optimizing models for IT, HR, and CX domains, the team will demonstrate a path to achieving enterprise-grade classification accuracy while significantly reducing computational costs and inference latency.
+In this project, you will use public datasets (preferably in IT/HR/CX) and ML technique named knowledge distillation (using LLMs to teach SLMs) to label topics and then compare the performance of the LLM and SLM. In Enterprise AI, the Distilled SLM may result in a model that matches LLM-level accuracy at 10× lower cost and 5× lower latency.
 
 ### Success Criteria
-SLM achieves ≥ 90% of LLM accuracy on theme classification (macro F1). ≥ 10x reduction in cost-per-1,000-labels vs. GPT-4 API pricing. ≥ 5x reduction in inference latency (measured on Colab T4). Demo: real-time side-by-side output comparing LLM vs. SLM on live ticket input.
+SLM achieves ≥ 90% of LLM accuracy on theme classification (macro F1).
+≥ 10× reduction in cost-per-1,000-labels vs. GPT-4 API pricing.
+≥ 5× reduction in inference latency (measured on Colab T4).
+Demo: real-time side-by-side output comparing LLM vs. SLM on live ticket input.
+
+NOTE: The Success metrics could change as the team converges on the project scope
+
+### Stretch Goals
+We could do the distillation for vision and audio applications as well, using large vision models and large audio models, respectively.
 
 ### Project Milestones
 Use these milestones to guide your work. Your team will create a GitHub Projects board to track tasks within each milestone.
 | Month | Milestone | Key Activities |
 |-------|-----------|----------------|
-| **September** | Data Exploration & Preprocessing | Acquire Bitext and CLINC150 datasets, perform exploratory data analysis, and sanitize inputs to prepare for LLM labeling. |
-| **October** | Feature Engineering & Baseline Modeling | Design and iterate on LLM prompts to generate 20k-30k silver-labeled examples and establish baseline performance metrics. |
-| **November** | Model Optimization & Evaluation | Fine-tune DistilBERT and Phi-2 models, benchmarking performance against the teacher model to ensure target accuracy. |
-| **December** | Insights, Deliverables & Presentation | Develop a Streamlit demo for real-time visualization and compile the final report detailing ROI, cost savings, and technical findings. |
+| **September** | [Title] | Acquire Bitext and CLINC150 datasets. Design and iterate LLM prompts for theme labeling and automation potential scoring. Generate 20–30K silver-labeled examples. Validate label quality on a 500-example manually reviewed subset. Establish TF-IDF + logistic regression baseline. |
+| **October** | [Title] | Fine-tune DistilBERT for multi-class theme classification on silver labels. Fine-tune Phi-2 regression head for automation potential scoring. Evaluate with macro F1 and ordinal agreement vs. LLM labels. Address class imbalance using weighted loss functions. |
+| **November** | [Title] | Benchmark fine-tuned SLM vs. GPT-4 on accuracy, cost-per-1,000-labels, and inference latency. Build side-by-side comparison Streamlit demo. Explore few-shot generalization to Finance domain. Write final report with quantified ROI analysis. |
+
+NOTE: The Milestones could change as the team converges on the project scope
 
 > **Note for the team:** Please create a GitHub Projects board in this repository to break these milestones into weekly tasks. Go to the **Projects** tab → **New project** → Choose **Board** → Add columns for each month.
 
 ---
 
 ## 📊 Dataset
-**Name and Source:** Bitext and CLINC150 (Public Open-Source NLP Benchmarks)  
-**Format:** JSON / CSV  
+**Name and Source:** [TBD]    
+**Format:** CSV/ TSV,JSON,Parquet,Excel (.xlsx)     
 **Size:** 1gb to 5gb  
-**Location:** HuggingFace Datasets Hub  
+**Location:** [TBD] 
 
 ### Key Details
-- IT/HR/CX Support Datasets
-- Requires strict mapping of raw support tickets to standardized intent categories, ensuring label quality through prompt engineering and data validation checks.
+-[TBD]  
 
 ---
 
 ## 🛠️ Suggested Approach
-**ML Problem Type:** NLP & RAG / Classification  
-**Recommended Libraries:** HuggingFace Transformers, PyTorch, Scikit-learn, Streamlit  
-**Evaluation Metrics:** Macro F1 Score, Inference Latency (ms), Cost per 1,000 requests, VRAM usage.
 
+**ML Problem Type:** Natural Language Processing (NLP), Large Language Models (LLMs)/ Generative AI 
+
+**Recommended Libraries:**
+- [e.g., pandas, scikit-learn, TensorFlow, Hugging Face]
+
+**Evaluation Metrics:**
+- [e.g., Accuracy, Precision/Recall, RMSE, BLEU score]
+  
 ---
 
 ## 📚 Resources to Get Started
+
 The following resources will help your team understand the problem space and potential technical approaches for this project:
+
 **Background Reading:**
-- HuggingFace Guide to Knowledge Distillation
+- [e.g., Link to an article or blog post about the problem domain]
+- [e.g., Link to an industry report or case study]
+
 **Technical Tutorials:**
-- Fine-tuning BERT for Sequence Classification
+- [e.g., Link to a free tutorial on the ML technique(s) involved]
+- [e.g., Link to documentation for a key library or tool]
+
 **Code Examples:**
-- HuggingFace Transformers Documentation for Distillation
+- [e.g., Link to a relevant GitHub repo]
+- [e.g., Link to a sample implementation or starter code]
+
+**Other:**
+- [Links to any additional resources — e.g., papers, videos, podcasts, etc.]
+
+*Feel free to explore beyond these, and share anything interesting you find with me!*
 
 ---
 
 ## 🤝 How We'll Work Together
-**Check-ins:** During our biweekly 60-min AI Studio Lab Section meeting block (2nd and 4th week of every month)  
-**Communication:** Slack / Email  
-**Response time:** 24-48 business hours  
-**Recommended Tools:**
-- **Coding:** Google Colab Free Tier  
-- **Collaboration:** GitHub, Notion  
-- **Virtual Meetings:** Zoom, Google Meet  
+
+**Official check-ins:** During our biweekly 45-minute AI Studio Lab Section meeting block (2nd and 4th week of every month)
+
+ **Other ways to reach out to me with questions:** 
+* [e.g., Your team's channel within Break Through Tech’s Discord space]
+* [e.g., Email; please copy your teammates and AI Studio Coach]
+* [e.g., Request a team check-in on Zoom]
+* [Note: I will aim to respond within 48 hours. Please reach out to your AI Studio Coach with urgent questions.]
+
+> 💡 **Challenge Advisor: Please update the above based on your availability and preference. If you are not able to answer questions or meet with fellows outside of the biweekly Lab Section check-ins, simply write in "N/A (only available during the official check-in times)"**
+
+**Recommended free coding / collaboration tools**
+* […]
+* […]
 
 ---
 
 ## 🚀 Getting Started
-1. **Review this overview document** and note any questions for our first meeting.
-2. **Begin reviewing the dataset** using the link provided in the Dataset section.
-3. **Read the GitHub Projects documentation** [here](https://docs.github.com/en/issues/planning-and-tracking-with-projects/learning-about-projects/about-projects).
 
-I'm excited to work with you!
+1. **Review this overview document** and note any questions for our first meeting
+2. **Begin reviewing the dataset** using the link above
+3. **Read the GitHub Projects documentation** [here](https://docs.github.com/en/issues/planning-and-tracking-with-projects/learning-about-projects/about-projects)
+
+I’m excited to work with you!
 
 ---
 
 ## ❓ Questions?
-Please bring any questions to our first meeting during the week of August 24th (Break Through Tech's Bridge to Studio - Session B).
+
+Please bring any questions to our first meeting during the week of August 24th (Break Through Tech’s Bridge to Studio - Session C). 
