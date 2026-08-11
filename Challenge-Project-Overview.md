@@ -42,6 +42,7 @@ This project offers a high-impact exploration of model distillation, which is a 
 
 **Company / Org:** Automation Anywhere  
 **Challenge Advisor:** Archan Dutta, archanduttads@gmail.com  
+**AI Studio Coach:** Shaun Figueiro, shaun.figueiro@breakthroughtech.org          
 **Program:** Break Through Tech AI Studio - Fall 2026  
 
 ---
