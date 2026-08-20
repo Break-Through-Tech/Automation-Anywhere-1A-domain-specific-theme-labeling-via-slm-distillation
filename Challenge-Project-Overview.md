@@ -57,12 +57,12 @@ Automation Anywhere is a global leader in Intelligent Automation, specializing i
 In this project, you will use datasets (preferably in IT/HR/CX) and ML technique named distillation (using LLMs to teach SLMs) to label topics and then compare the performance of the LLM and SLM. In Enterprise AI, the Distilled SLM may result in a model that matches LLM-level accuracy at lower cost and lower latency. One way to do so is by using Parameter-Efficient Fine-Tuning (PEFT) - LoRA or QLoRA.
 
 ### Success Criteria
-SLM achieves reasonable accuracy on theme labeling when compared to Frontier LLM.
-SLM reduces cost-per-inference when compared to Frontier LLM.
-SLM reduces in inference latency when compared to Frontier LLM.
-Demo: real-time side-by-side output comparing LLM vs. SLM on live ticket input.
+- SLM achieves reasonable accuracy on theme labeling when compared to Frontier LLM.
+- SLM reduces cost-per-inference when compared to Frontier LLM.
+- SLM reduces inference latency when compared to Frontier LLM.
+- Demo: real-time side-by-side output comparing LLM vs. SLM on live ticket input.
 
-NOTE: The Success metrics could change as the team converges on the project scope
+NOTE: The Success metrics could change as the team converges on the project scope.
 
 ### Stretch Goals
 Based on the results of the experiments, write a Research Paper.
@@ -76,7 +76,7 @@ Use these milestones to guide your work. Your team will create a GitHub Projects
 | **2 weeks - Ends on Nov 15th** | Analysis, Findings and Discussion | Analyze the results of experiments and highlight observations and findings. <br> Discussion on Performance Dimension - Latency, Cost, Quality, Generalizability.|
 | **2 weeks - End of Nov 31st** | Storytelling and Presentation | Consolidate Results. <br> Internal Demo. <br> Prepare Presentation for BTT Demo |
 
-NOTE: The Milestones could change as the team converges on the project scope
+NOTE: The Milestones could change as the team converges on the project scope.
 
 > **Note for the team:** Please create a GitHub Projects board in this repository to break these milestones into weekly tasks. Go to the **Projects** tab → **New project** → Choose **Board** → Add columns for each month.
 
@@ -88,8 +88,14 @@ NOTE: The Milestones could change as the team converges on the project scope
 **Size:** 1gb to 5gb  
 **Location:** https://huggingface.co/datasets/bitext/Bitext-customer-support-llm-chatbot-training-dataset
 
-### Key Details
--[TBD]  
+### Learnings from this Project
+Students will be exposed to a lot of essential AI/ML techniques:
+- Parameter-Efficient Fine-Tuning (PEFT) - LoRA or QLoRA.
+- Evaluation Techniques
+- Running SLMs locally, or on Google Colab. Google Colab is highly preferred as it will allow fair comparison between models.
+- Learn about multiple open source SLMs
+- Solve Technical Problems to improve Business metrics
+- Improve Communication and Teanwork
 
 ---
 
