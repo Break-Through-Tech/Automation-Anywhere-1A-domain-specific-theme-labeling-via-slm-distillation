@@ -104,10 +104,10 @@ Students will be exposed to a lot of essential AI/ML techniques:
 **ML Problem Type:** Natural Language Processing (NLP), Large Language Models (LLMs)/ Generative AI / Parameter-Efficient Fine-Tuning / Distillation / 
 
 **Recommended Libraries:**
-- [e.g., pandas, scikit-learn, TensorFlow, Hugging Face]
+- pandas, scikit-learn, TensorFlow, Hugging Face
 
 **Evaluation Metrics:**
-- [e.g., Accuracy, Precision/Recall, RMSE, BLEU score]
+- Accuracy, Precision/Recall, RMSE, BLEU score
   
 ---
 
@@ -137,7 +137,7 @@ The following resources will help your team understand the problem space and pot
 * Your team's channel within Break Through Tech’s Discord space.
 * Email Please copy your teammates and AI Studio Coach. Here's my email: archanduttads@gmail.com 
 * Request a team check-in on Zoom on Google Meet.
-* [Note: I will aim to respond within 48 hours. Please reach out to your AI Studio Coach with urgent questions.
+* Note: I will aim to respond within 48 hours. Please reach out to your AI Studio Coach with urgent questions.
 * Availability:  Tuesday, Wednesday, Thursday, anytime between 7 pm and 8 pm PST
 
 > 💡 **Challenge Advisor: Please update the above based on your availability and preference. If you are not able to answer questions or meet with fellows outside of the biweekly Lab Section check-ins, simply write in "N/A (only available during the official check-in times)"**
