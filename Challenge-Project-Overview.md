@@ -64,10 +64,10 @@ Students will be exposed to a lot of essential AI/ML techniques:
 **ML Problem Type:** Natural Language Processing (NLP), Large Language Models (LLMs)/ Generative AI / Parameter-Efficient Fine-Tuning / Distillation / 
 
 **Recommended Libraries:**
-- pandas, scikit-learn, TensorFlow, Hugging Face
+- pandas, scikit-learn, torch, Hugging Face, sentence-transformers, openai, anthropic, bitsandbytes, unsloth etc.
 
 **Evaluation Metrics:**
-- Accuracy, Precision/Recall, RMSE, BLEU score
+- Relevance, Equivalence, Specificity, ROUGE, BERTScore etc.
   
 ---
 
