@@ -116,19 +116,14 @@ Students will be exposed to a lot of essential AI/ML techniques:
 The following resources will help your team understand the problem space and potential technical approaches for this project:
 
 **Background Reading:**
-- [e.g., Link to an article or blog post about the problem domain]
-- [e.g., Link to an industry report or case study]
+- What is LLM-as-a-Judge ?  https://www.youtube.com/watch?v=dQWzKeifcFs
+- https://www.confident-ai.com/blog/llm-evaluation-metrics-everything-you-need-for-llm-evaluation.  https://www.confident-ai.com/blog/llm-evaluation-metrics-everything-you-need-for-llm-evaluation
 
 **Technical Tutorials:**
-- [e.g., Link to a free tutorial on the ML technique(s) involved]
-- [e.g., Link to documentation for a key library or tool]
-
-**Code Examples:**
-- [e.g., Link to a relevant GitHub repo]
-- [e.g., Link to a sample implementation or starter code]
-
-**Other:**
-- [Links to any additional resources — e.g., papers, videos, podcasts, etc.]
+- What is LLM Distillation?   https://www.youtube.com/watch?v=h7DUpHPasME
+- LLM Distillation Explained: Applications, Implementation & More   https://www.datacamp.com/blog/distillation-llm
+- LLM (Parameter Efficient) Fine Tuning - Explained!   https://www.youtube.com/watch?v=HcVtpLAGMXo
+- LoRA & QLoRA Fine-tuning Explained In-Depth.  https://www.youtube.com/watch?v=t1caDsMzWBk
 
 *Feel free to explore beyond these, and share anything interesting you find with me!*
 
@@ -139,24 +134,22 @@ The following resources will help your team understand the problem space and pot
 **Official check-ins:** During our biweekly 45-minute AI Studio Lab Section meeting block (2nd and 4th week of every month)
 
  **Other ways to reach out to me with questions:** 
-* [e.g., Your team's channel within Break Through Tech’s Discord space]
-* [e.g., Email; please copy your teammates and AI Studio Coach]
-* [e.g., Request a team check-in on Zoom]
-* [Note: I will aim to respond within 48 hours. Please reach out to your AI Studio Coach with urgent questions.]
+* Your team's channel within Break Through Tech’s Discord space.
+* Email Please copy your teammates and AI Studio Coach. Here's my email: archanduttads@gmail.com 
+* Request a team check-in on Zoom on Google Meet.
+* [Note: I will aim to respond within 48 hours. Please reach out to your AI Studio Coach with urgent questions.
+* Availability:  Tuesday, Wednesday, Thursday, anytime between 7 pm and 8 pm PST
 
 > 💡 **Challenge Advisor: Please update the above based on your availability and preference. If you are not able to answer questions or meet with fellows outside of the biweekly Lab Section check-ins, simply write in "N/A (only available during the official check-in times)"**
-
-**Recommended free coding / collaboration tools**
-* […]
-* […]
 
 ---
 
 ## 🚀 Getting Started
 
-1. **Review this overview document** and note any questions for our first meeting
-2. **Begin reviewing the dataset** using the link above
-3. **Read the GitHub Projects documentation** [here](https://docs.github.com/en/issues/planning-and-tracking-with-projects/learning-about-projects/about-projects)
+1. **Clone the Github Repo and follow the README instructions - For Local Setup and For Google Colab Setup
+2. **Review the code and note any questions for our first meeting.
+3. **Begin reviewing the dataset** using the link above.
+4. **Read the GitHub Projects documentation** [here](https://docs.github.com/en/issues/planning-and-tracking-with-projects/learning-about-projects/about-projects)
 
 I’m excited to work with you!
 
