@@ -69,11 +69,12 @@ We could do the distillation for vision and audio applications as well, using la
 
 ### Project Milestones
 Use these milestones to guide your work. Your team will create a GitHub Projects board to track tasks within each milestone.
-| Month | Milestone | Key Activities |
+| Duration | Milestone | Key Activities |
 |-------|-----------|----------------|
-| **September** | Understanding Business Problem and Code Setup | Acquire Bitext and CLINC150 datasets. Design and iterate LLM prompts for theme labeling and automation potential scoring. Generate 20–30K silver-labeled examples. Validate label quality on a 500-example manually reviewed subset. Establish TF-IDF + logistic regression baseline. |
-| **October** | [Title] | Fine-tune DistilBERT for multi-class theme classification on silver labels. Fine-tune Phi-2 regression head for automation potential scoring. Evaluate with macro F1 and ordinal agreement vs. LLM labels. Address class imbalance using weighted loss functions. |
-| **November** | [Title] | Benchmark fine-tuned SLM vs. GPT-4 on accuracy, cost-per-1,000-labels, and inference latency. Build side-by-side comparison Streamlit demo. Explore few-shot generalization to Finance domain. Write final report with quantified ROI analysis. |
+| **2 weeks - Ends on Sep 15th** | Understanding Business Problem and Code Setup | Acquire Bitext and CLINC150 datasets. Design and iterate LLM prompts for theme labeling and automation potential scoring. Generate 20–30K silver-labeled examples. Validate label quality on a 500-example manually reviewed subset. Establish TF-IDF + logistic regression baseline. |
+| **6 weeks - End on Oct 31st** | [Title] | Fine-tune DistilBERT for multi-class theme classification on silver labels. Fine-tune Phi-2 regression head for automation potential scoring. Evaluate with macro F1 and ordinal agreement vs. LLM labels. Address class imbalance using weighted loss functions. |
+| **2 weeks - Ends on Nov 15th** | [Title] | Benchmark fine-tuned SLM vs. GPT-4 on accuracy, cost-per-1,000-labels, and inference latency. Build side-by-side comparison Streamlit demo. Explore few-shot generalization to Finance domain. Write final report with quantified ROI analysis. |
+| **2 weeks - End of Nov 31st** | [Title] | Benchmark fine-tuned SLM vs. GPT-4 on accuracy, cost-per-1,000-labels, and inference latency. Build side-by-side comparison Streamlit demo. Explore few-shot generalization to Finance domain. Write final report with quantified ROI analysis. |
 
 NOTE: The Milestones could change as the team converges on the project scope
 
