@@ -77,7 +77,7 @@ The following resources will help your team understand the problem space and pot
 
 **Background Reading:**
 - What is LLM-as-a-Judge ?  https://www.youtube.com/watch?v=dQWzKeifcFs
-- https://www.confident-ai.com/blog/llm-evaluation-metrics-everything-you-need-for-llm-evaluation.  https://www.confident-ai.com/blog/llm-evaluation-metrics-everything-you-need-for-llm-evaluation
+- LLM Evaluation Metrics: The Ultimate LLM Evaluation Guide   https://www.confident-ai.com/blog/llm-evaluation-metrics-everything-you-need-for-llm-evaluation.  https://www.confident-ai.com/blog/llm-evaluation-metrics-everything-you-need-for-llm-evaluation
 
 **Technical Tutorials:**
 - What is LLM Distillation?   https://www.youtube.com/watch?v=h7DUpHPasME
