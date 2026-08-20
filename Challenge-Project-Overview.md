@@ -70,9 +70,9 @@ Based on the results of the experiments, write a Research Paper.
 ### Project Milestones
 Use these milestones to guide your work. Your team will create a GitHub Projects board to track tasks within each milestone.
 | Duration | Milestone | Key Activities |
-|-------|-----------|----------------|
+|---------------|---------------|----------------|
 | **2 weeks - Ends on Sep 15th** | Business Problem and Code Setup | Understand the Business Problem. <br> High-level Project Plan. <br> Team Task Distribution. <br> Environment and Code Setup - Run Smoke Test. |
-| **6 weeks - End on Oct 31st** | Planning, Fine-Tuning SLMs and Experimentation] | Detailed Project Planning. <br> Understanding the Pipeline.  <br> Run Fine-Tuning Experiments on Smaller Dataset. <br> Run Fine-Tuning Experiments on Larger Dataset.  <br> Change Implementation as needed - LoRA, QLoRA, Prompt Engineering, Metrics etc.  <br> Evaluation of experiments. |
+| **6 weeks - End on Oct 31st** | Planning, Fine-Tuning SLMs and Experimentation | Detailed Project Planning. <br> Understanding the Pipeline.  <br> Run Fine-Tuning Experiments on Smaller Dataset. <br> Run Fine-Tuning Experiments on Larger Dataset.  <br> Change Implementation as needed - LoRA, QLoRA, Prompt Engineering, Metrics etc.  <br> Evaluation of experiments. |
 | **2 weeks - Ends on Nov 15th** | Analysis, Findings and Discussion | Analyze the results of experiments and highlight observations and findings. <br> Discussion on Performance Dimension - Latency, Cost, Quality, Generalizability.|
 | **2 weeks - End of Nov 31st** | Storytelling and Presentation | Consolidate Results. <br> Internal Demo. <br> Prepare Presentation for BTT Demo |
 
