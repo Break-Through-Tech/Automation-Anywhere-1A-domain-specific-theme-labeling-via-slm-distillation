@@ -71,10 +71,10 @@ We could do the distillation for vision and audio applications as well, using la
 Use these milestones to guide your work. Your team will create a GitHub Projects board to track tasks within each milestone.
 | Duration | Milestone | Key Activities |
 |-------|-----------|----------------|
-| **2 weeks - Ends on Sep 15th** | Business Problem and Code Setup | Understand the Business Problem. <br> High-level Project Plan. <br> Team Task Distribution. <br> Environment and Code Setup - Run Smoke Test |
-| **6 weeks - End on Oct 31st** | Planning, Fine-Tuning SLMs and Experimentation] | Fine-tune DistilBERT for multi-class theme classification on silver labels. Fine-tune Phi-2 regression head for automation potential scoring. Evaluate with macro F1 and ordinal agreement vs. LLM labels. Address class imbalance using weighted loss functions. |
-| **2 weeks - Ends on Nov 15th** | Evaluation and Analysis | Benchmark fine-tuned SLM vs. GPT-4 on accuracy, cost-per-1,000-labels, and inference latency. Build side-by-side comparison Streamlit demo. Explore few-shot generalization to Finance domain. Write final report with quantified ROI analysis. |
-| **2 weeks - End of Nov 31st** | Storytelling and Presentation | Benchmark fine-tuned SLM vs. GPT-4 on accuracy, cost-per-1,000-labels, and inference latency. Build side-by-side comparison Streamlit demo. Explore few-shot generalization to Finance domain. Write final report with quantified ROI analysis. |
+| **2 weeks - Ends on Sep 15th** | Business Problem and Code Setup | Understand the Business Problem. <br> High-level Project Plan. <br> Team Task Distribution. <br> Environment and Code Setup - Run Smoke Test. |
+| **6 weeks - End on Oct 31st** | Planning, Fine-Tuning SLMs and Experimentation] | Detailed Project Planning. <br> Understanding the Pipeline.  <br> Run Fine-Tuning Experiments on Smaller Dataset. <br> Run Fine-Tuning Experiments on Larger Dataset Fine-tune.  <br> Change Implementation as needed - LoRA, QLoRA, Prompt Engineering, Metrics etc.  <br> Evaluation of experiments. |
+| **2 weeks - Ends on Nov 15th** | Analysis, Findings and Discussion | Analyze the results of experiments and highlight observations and findings. <br> Discussion on Performance Dimension - Latency, Cost, Quality, Generalizability.|
+| **2 weeks - End of Nov 31st** | Storytelling and Presentation | Consolidate Results. Internal Demo. <br> Prepare Presentation for BTT Demo |
 
 NOTE: The Milestones could change as the team converges on the project scope
 
