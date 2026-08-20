@@ -38,7 +38,7 @@ This project offers a high-impact exploration of model distillation, which is a 
 
 ---
 
-# Domain-Specific Theme Labeling via SLM Distillation
+# Domain-Specific Theme Labeling via Parameter-Efficient Fine-Tuning (PEFT) on SLM
 
 **Company / Org:** Automation Anywhere  
 **Challenge Advisor:** Archan Dutta, archanduttads@gmail.com  
@@ -54,27 +54,27 @@ Automation Anywhere is a global leader in Intelligent Automation, specializing i
 
 ## 🎯 The Challenge
 ### Project Summary
-In this project, you will use public datasets (preferably in IT/HR/CX) and ML technique named knowledge distillation (using LLMs to teach SLMs) to label topics and then compare the performance of the LLM and SLM. In Enterprise AI, the Distilled SLM may result in a model that matches LLM-level accuracy at 10× lower cost and 5× lower latency.
+In this project, you will use datasets (preferably in IT/HR/CX) and ML technique named distillation (using LLMs to teach SLMs) to label topics and then compare the performance of the LLM and SLM. In Enterprise AI, the Distilled SLM may result in a model that matches LLM-level accuracy at lower cost and lower latency. One way to do so is by using Parameter-Efficient Fine-Tuning (PEFT) - LoRA or QLoRA.
 
 ### Success Criteria
-SLM achieves ≥ 90% of LLM accuracy on theme classification (macro F1).
-≥ 10× reduction in cost-per-1,000-labels vs. GPT-4 API pricing.
-≥ 5× reduction in inference latency (measured on Colab T4).
+SLM achieves reasonable accuracy on theme labeling when compared to Frontier LLM.
+SLM reduces cost-per-inference when compared to Frontier LLM.
+SLM reduces in inference latency when compared to Frontier LLM.
 Demo: real-time side-by-side output comparing LLM vs. SLM on live ticket input.
 
 NOTE: The Success metrics could change as the team converges on the project scope
 
 ### Stretch Goals
-We could do the distillation for vision and audio applications as well, using large vision models and large audio models, respectively.
+Based on the results of the experiments, write a Research Paper.
 
 ### Project Milestones
 Use these milestones to guide your work. Your team will create a GitHub Projects board to track tasks within each milestone.
 | Duration | Milestone | Key Activities |
 |-------|-----------|----------------|
 | **2 weeks - Ends on Sep 15th** | Business Problem and Code Setup | Understand the Business Problem. <br> High-level Project Plan. <br> Team Task Distribution. <br> Environment and Code Setup - Run Smoke Test. |
-| **6 weeks - End on Oct 31st** | Planning, Fine-Tuning SLMs and Experimentation] | Detailed Project Planning. <br> Understanding the Pipeline.  <br> Run Fine-Tuning Experiments on Smaller Dataset. <br> Run Fine-Tuning Experiments on Larger Dataset Fine-tune.  <br> Change Implementation as needed - LoRA, QLoRA, Prompt Engineering, Metrics etc.  <br> Evaluation of experiments. |
+| **6 weeks - End on Oct 31st** | Planning, Fine-Tuning SLMs and Experimentation] | Detailed Project Planning. <br> Understanding the Pipeline.  <br> Run Fine-Tuning Experiments on Smaller Dataset. <br> Run Fine-Tuning Experiments on Larger Dataset.  <br> Change Implementation as needed - LoRA, QLoRA, Prompt Engineering, Metrics etc.  <br> Evaluation of experiments. |
 | **2 weeks - Ends on Nov 15th** | Analysis, Findings and Discussion | Analyze the results of experiments and highlight observations and findings. <br> Discussion on Performance Dimension - Latency, Cost, Quality, Generalizability.|
-| **2 weeks - End of Nov 31st** | Storytelling and Presentation | Consolidate Results. Internal Demo. <br> Prepare Presentation for BTT Demo |
+| **2 weeks - End of Nov 31st** | Storytelling and Presentation | Consolidate Results. <br> Internal Demo. <br> Prepare Presentation for BTT Demo |
 
 NOTE: The Milestones could change as the team converges on the project scope
 
@@ -83,10 +83,10 @@ NOTE: The Milestones could change as the team converges on the project scope
 ---
 
 ## 📊 Dataset
-**Name and Source:** [TBD]    
+**Name and Source:** bitext/Bitext-customer-support-llm-chatbot-training-dataset    
 **Format:** CSV/ TSV,JSON,Parquet,Excel (.xlsx)     
 **Size:** 1gb to 5gb  
-**Location:** [TBD] 
+**Location:** https://huggingface.co/datasets/bitext/Bitext-customer-support-llm-chatbot-training-dataset
 
 ### Key Details
 -[TBD]  
@@ -95,7 +95,7 @@ NOTE: The Milestones could change as the team converges on the project scope
 
 ## 🛠️ Suggested Approach
 
-**ML Problem Type:** Natural Language Processing (NLP), Large Language Models (LLMs)/ Generative AI 
+**ML Problem Type:** Natural Language Processing (NLP), Large Language Models (LLMs)/ Generative AI / Parameter-Efficient Fine-Tuning / Distillation / 
 
 **Recommended Libraries:**
 - [e.g., pandas, scikit-learn, TensorFlow, Hugging Face]
