@@ -71,7 +71,7 @@ We could do the distillation for vision and audio applications as well, using la
 Use these milestones to guide your work. Your team will create a GitHub Projects board to track tasks within each milestone.
 | Month | Milestone | Key Activities |
 |-------|-----------|----------------|
-| **September** | [Title] | Acquire Bitext and CLINC150 datasets. Design and iterate LLM prompts for theme labeling and automation potential scoring. Generate 20–30K silver-labeled examples. Validate label quality on a 500-example manually reviewed subset. Establish TF-IDF + logistic regression baseline. |
+| **September** | Understanding Business Problem and Code Setup | Acquire Bitext and CLINC150 datasets. Design and iterate LLM prompts for theme labeling and automation potential scoring. Generate 20–30K silver-labeled examples. Validate label quality on a 500-example manually reviewed subset. Establish TF-IDF + logistic regression baseline. |
 | **October** | [Title] | Fine-tune DistilBERT for multi-class theme classification on silver labels. Fine-tune Phi-2 regression head for automation potential scoring. Evaluate with macro F1 and ordinal agreement vs. LLM labels. Address class imbalance using weighted loss functions. |
 | **November** | [Title] | Benchmark fine-tuned SLM vs. GPT-4 on accuracy, cost-per-1,000-labels, and inference latency. Build side-by-side comparison Streamlit demo. Explore few-shot generalization to Finance domain. Write final report with quantified ROI analysis. |
 
