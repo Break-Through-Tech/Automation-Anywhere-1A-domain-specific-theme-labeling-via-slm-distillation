@@ -115,6 +115,8 @@ def run_phase1(cfg: dict) -> None:
         logger.info(f"[pipeline] Outputs → {run_dir}")
 
     processed_dir = Path(paths["data_processed"])
+    eval_dir.mkdir(parents=True, exist_ok=True)
+    (eval_dir / "_cache").mkdir(exist_ok=True)  # hides intermediate files
     business_eval = BusinessEvaluator(cfg)
 
     # ═════════════════════════════════════════════════════════════════════════
@@ -208,7 +210,31 @@ def run_phase1(cfg: dict) -> None:
     # ═════════════════════════════════════════════════════════════════════════
 
     # Load split cluster IDs from labeled_df
-    test_cluster_ids = load_split_clusters(cfg, labeled_df)["test"]
+    split_clusters   = load_split_clusters(cfg, labeled_df)
+    test_cluster_ids = split_clusters["test"]
+
+    # eval_all_splits: run SLM inference on ALL clusters (train+val+test)
+    # This reveals overfitting when you compare train vs test in the summary.
+    eval_all_splits = cfg.get("evaluation", {}).get("eval_all_splits", False)
+    if eval_all_splits:
+        from phase1.data.schema import CLUSTER_ID
+        inference_cluster_ids = set(labeled_df[CLUSTER_ID].astype(int).unique().tolist())
+        logger.info(
+            f"[pipeline] eval_all_splits=true → running SLM inference on "
+            f"ALL {len(inference_cluster_ids)} clusters (train+val+test)."
+        )
+    else:
+        inference_cluster_ids = test_cluster_ids
+        logger.info(
+            f"[pipeline] eval_all_splits=false → SLM inference on "
+            f"{len(test_cluster_ids)} test clusters only."
+        )
+
+    # Build split_map for combine step ({cluster_id: "train"/"val"/"test"})
+    split_map: dict[int, str] = {}
+    for split_name, cluster_set in split_clusters.items():
+        for cid in cluster_set:
+            split_map[int(cid)] = split_name
 
     run_any_inference = (
         pipe_cfg["run_baseline_eval"] or pipe_cfg["run_finetuned_eval"]
@@ -233,7 +259,7 @@ def run_phase1(cfg: dict) -> None:
             business_eval.record_model_load_time("baseline", time.time() - t_load)
             _run_inference(
                 model=base_model, tokenizer=base_tok, cfg=cfg,
-                labeled_df=labeled_df, cluster_ids=test_cluster_ids,
+                labeled_df=labeled_df, cluster_ids=inference_cluster_ids,
                 fine_tuned=False, output_path=str(baseline_preds_path),
                 business_eval=business_eval,
             )
@@ -256,7 +282,7 @@ def run_phase1(cfg: dict) -> None:
                 business_eval.record_model_load_time("finetuned", time.time() - t_load)
                 _run_inference(
                     model=ft_model, tokenizer=ft_tok, cfg=cfg,
-                    labeled_df=labeled_df, cluster_ids=test_cluster_ids,
+                    labeled_df=labeled_df, cluster_ids=inference_cluster_ids,
                     fine_tuned=True, output_path=str(finetuned_preds_path),
                     business_eval=business_eval,
                 )
@@ -270,7 +296,7 @@ def run_phase1(cfg: dict) -> None:
 
         # ── 6c: Teacher predictions (no model needed — from labeled CSV) ───────
         teacher_preds_path = eval_dir / FILE_TEACHER_PREDS
-        _make_teacher_predictions(labeled_df, test_cluster_ids, cfg, str(teacher_preds_path))
+        _make_teacher_predictions(labeled_df, inference_cluster_ids, cfg, str(teacher_preds_path))
 
     else:
         logger.info("[pipeline] Skipping inference steps.")
@@ -338,7 +364,7 @@ def run_phase1(cfg: dict) -> None:
 
     # ── STEP 10: Combine ──────────────────────────────────────────────────────
     logger.info("\n" + "━" * 60 + "\n  STEP 10: Combining results\n" + "━" * 60)
-    run_combine(eval_dir)
+    run_combine(eval_dir, split_map=split_map, labeled_df=labeled_df, cfg=cfg)
 
     logger.info(
         f"\n{'=' * 60}\n"
@@ -421,7 +447,7 @@ def _clear_device_cache() -> None:
         pass
 
 
-def _make_teacher_predictions(labeled_df, test_cluster_ids, cfg, output_path) -> None:
+def _make_teacher_predictions(labeled_df, inference_cluster_ids, cfg, output_path) -> None:
     """Write teacher labels for test clusters in prediction JSONL format."""
     from phase1.data.schema import (
         CLUSTER_ID, PROMPT_IDS, cluster_name_col,
@@ -431,7 +457,7 @@ def _make_teacher_predictions(labeled_df, test_cluster_ids, cfg, output_path) ->
     label_cols    = {pid: cluster_name_col(teacher_model, pid) for pid in PROMPT_IDS}
 
     cluster_rows = (
-        labeled_df[labeled_df[CLUSTER_ID].isin(test_cluster_ids)]
+        labeled_df[labeled_df[CLUSTER_ID].isin(inference_cluster_ids)]
         .groupby(CLUSTER_ID).first().reset_index()
     )
     records = []

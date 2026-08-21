@@ -106,15 +106,16 @@ class BusinessEvaluator:
 
     def save_latency_file(self, tag: str, output_path: str) -> None:
         """
-        Save inference latency records for one model as a flat CSV.
-
-        tag: "teacher" | "baseline" | "finetuned"
-        Columns: cluster_id | prompt_id | latency_s
-
-        This file is read by combine.py to build the latency pivot.
+        Save inference latency records for one model to _cache/ subdirectory.
+        Used by combine.py to build the latency pivot.
         """
         import pandas as pd
         from pathlib import Path
+
+        # Always write to _cache/ regardless of what output_path says
+        cache_dir = Path(output_path).parent / "_cache"
+        cache_dir.mkdir(parents=True, exist_ok=True)
+        actual_path = cache_dir / Path(output_path).name
 
         if tag == "teacher":
             records = self._label_records
@@ -134,11 +135,10 @@ class BusinessEvaluator:
             logger.debug(f"[business_eval] No latency records for tag='{tag}' — skipping file.")
             return
 
-        Path(output_path).parent.mkdir(parents=True, exist_ok=True)
-        pd.DataFrame(rows).to_csv(output_path, index=False)
+        pd.DataFrame(rows).to_csv(actual_path, index=False)
         mean_lat = sum(r["latency_s"] for r in rows) / len(rows)
         logger.info(
-            f"[business_eval] Latency file ({tag}) → {output_path}  "
+            f"[business_eval] Latency file ({tag}) → {actual_path}  "
             f"({len(rows)} records, mean {mean_lat:.3f}s)"
         )
 

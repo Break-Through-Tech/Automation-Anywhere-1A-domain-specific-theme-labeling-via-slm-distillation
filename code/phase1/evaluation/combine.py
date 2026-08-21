@@ -1,16 +1,25 @@
 """
 phase1/evaluation/combine.py
 
-Reads the per-model evaluation files written independently by metrics.py,
-llm_judge.py, and business_eval.py, then produces three combined outputs:
+Reads per-model evaluation files from _cache/ and prediction JSONL files, then
+produces four clean user-facing pivot CSVs (all with split column):
 
-  latency_by_cluster.csv  — wide pivot, one row per cluster, columns grouped by
-                             prompt so Teacher / Baseline / Fine-tuned are adjacent
-  metrics_summary.csv     — mean non-LLM scores per model (one row per model)
-  judge_summary.csv        — mean LLM judge scores per model
+  labels_by_cluster.csv    — actual label text per (cluster, split, prompt)
+  latency_by_cluster.csv   — inference timing per (cluster, split, prompt)
+  nonllm_by_cluster.csv    — cosine sim, ROUGE-L per (cluster, split, prompt)
+  llm_by_cluster.csv       — judge scores per (cluster, split, prompt)
 
-Can be called at any time after any subset of per-model files exist.
-Missing files are skipped gracefully rather than raising errors.
+Plus two summary files (one row per split × model):
+  metrics_summary.csv
+  judge_summary.csv
+
+All functions tolerate missing files — a model with no predictions simply
+produces NaN in that model's columns without breaking the other models.
+
+Optional master combine
+-----------------------
+Call create_master_csv(eval_dir) to join all four pivot files into a single
+wide CSV for ad-hoc analysis.
 """
 
 import json
@@ -21,44 +30,169 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-TAGS        = ["teacher", "baseline", "finetuned"]
-PROMPT_IDS  = ["P1", "P2", "P3", "P4", "P5"]
+TAGS       = ["teacher", "baseline", "finetuned"]
+PROMPT_IDS = ["P1", "P2", "P3", "P4", "P5"]
 
 
 # ── Public entry point ────────────────────────────────────────────────────────
 
-def run_combine(eval_dir: str | Path) -> None:
-    """Run all combine operations. Missing per-model files are skipped."""
-    eval_dir = Path(eval_dir)
-    combine_latencies(eval_dir)
-    combine_nonllm_summary(eval_dir)
-    combine_llm_summary(eval_dir)
-    combine_nonllm_by_cluster(eval_dir)   # per-cluster pivot for non-LLM metrics
-    combine_llm_by_cluster(eval_dir)      # per-cluster pivot for judge scores
-
-
-# ── Per-cluster non-LLM pivot ─────────────────────────────────────────────────
-
-def combine_nonllm_by_cluster(eval_dir: Path) -> None:
+def run_combine(
+    eval_dir: str | Path,
+    split_map: dict | None = None,       # {cluster_id (int): "train"/"val"/"test"}
+    labeled_df=None,                     # pd.DataFrame with teacher label columns
+    cfg: dict | None = None,
+) -> None:
     """
-    Pivot per-model non-LLM metric files into one wide cluster-level file.
+    Run all combine operations.
 
-    Column order (left-to-right comparison per metric):
-      cluster_id | prompt_id |
-      cosine_same_teacher | cosine_same_baseline | cosine_same_finetuned |
-      cosine_multi_teacher | cosine_multi_baseline | cosine_multi_finetuned |
-      rouge_l_same_teacher | ... | rouge_l_multi_finetuned
-
-    Missing models produce NaN columns.
+    split_map and labeled_df are needed for the split column and labels pivot.
+    If not provided, they are loaded from the standard paths in data/processed/.
     """
-    from phase1.data.schema import nonllm_file
+    eval_dir  = Path(eval_dir)
+    cache_dir = eval_dir / "_cache"
+
+    # Load split_map from disk if not passed in
+    if split_map is None:
+        split_map = _load_split_map(eval_dir)
+
+    # Load labeled_df from disk if not passed in
+    if labeled_df is None and cfg is not None:
+        from pathlib import Path as P
+        labeled_csv = P(cfg["paths"]["data_processed"]) / "bitext_labeled.csv"
+        if labeled_csv.exists():
+            labeled_df = pd.read_csv(labeled_csv)
+
+    combine_labels_by_cluster(eval_dir, split_map, labeled_df, cfg)
+    combine_latencies(eval_dir, cache_dir, split_map)
+    combine_nonllm_by_cluster(eval_dir, cache_dir, split_map)
+    combine_llm_by_cluster(eval_dir, cache_dir, split_map)
+    combine_nonllm_summary(eval_dir, cache_dir, split_map)
+    combine_llm_summary(eval_dir, cache_dir, split_map)
+
+
+# ── Labels pivot ──────────────────────────────────────────────────────────────
+
+def combine_labels_by_cluster(
+    eval_dir: Path,
+    split_map: dict | None,
+    labeled_df,
+    cfg: dict | None,
+) -> None:
+    """
+    Build labels_by_cluster.csv: actual label text for all models.
+
+    Teacher labels are available for ALL clusters (from labeled_df).
+    SLM labels only exist for clusters that had inference run on them
+    (baseline/finetuned_predictions.jsonl).
+    """
+    from phase1.data.schema import (
+        CLUSTER_ID, FILE_LABELS_PIVOT,
+        PROMPT_IDS as PIDS, cluster_name_col,
+        PRED_CLUSTER_ID, PRED_PROMPT_ID, PRED_GENERATED_LABEL,
+    )
+
+    if labeled_df is None or cfg is None:
+        logger.info("[combine] No labeled_df/cfg — skipping labels_by_cluster.")
+        return
+
+    teacher_model = cfg["teacher_llm"]["model"]
+    out           = eval_dir / FILE_LABELS_PIVOT
+    rows          = []
+
+    # Teacher labels — all clusters, all prompts
+    teacher_labels: dict[tuple, str] = {}
+    for _, row in labeled_df.iterrows():
+        cid = int(row[CLUSTER_ID])
+        for pid in PIDS:
+            col = cluster_name_col(teacher_model, pid)
+            if col in row.index and pd.notna(row[col]):
+                teacher_labels[(cid, pid)] = str(row[col])
+
+    # SLM labels — from prediction JSONL files
+    slm_labels: dict[str, dict[tuple, str]] = {"baseline": {}, "finetuned": {}}
+    for tag in ("baseline", "finetuned"):
+        jsonl_path = eval_dir / f"{tag}_predictions.jsonl"
+        if jsonl_path.exists():
+            with open(jsonl_path) as f:
+                for line in f:
+                    r = json.loads(line)
+                    slm_labels[tag][(int(r[PRED_CLUSTER_ID]), r[PRED_PROMPT_ID])] = \
+                        r.get(PRED_GENERATED_LABEL, "")
+
+    all_clusters = sorted(labeled_df[CLUSTER_ID].unique().astype(int).tolist())
+    for cid in all_clusters:
+        split = (split_map or {}).get(cid, "unknown")
+        for pid in PIDS:
+            rows.append({
+                "cluster_id":       cid,
+                "split":            split,
+                "prompt_id":        pid,
+                "teacher_label":    teacher_labels.get((cid, pid), ""),
+                "baseline_label":   slm_labels["baseline"].get((cid, pid), float("nan")),
+                "finetuned_label":  slm_labels["finetuned"].get((cid, pid), float("nan")),
+            })
+
+    df = pd.DataFrame(rows).sort_values(["cluster_id", "prompt_id"])
+    df.to_csv(out, index=False)
+    logger.info(f"[combine] Labels pivot → {out}  ({len(df)} rows)")
+
+
+# ── Latency pivot ─────────────────────────────────────────────────────────────
+
+def combine_latencies(eval_dir: Path, cache_dir: Path, split_map: dict | None) -> None:
+    """
+    Pivot per-model latency CSVs into one wide cluster-level file.
+
+    Row: (cluster_id, split, prompt_id)
+    Columns: teacher_latency_s | baseline_latency_s | finetuned_latency_s
+    """
+    from phase1.data.schema import latency_file, FILE_LATENCY_PIVOT
+
+    dfs = {}
+    for tag in TAGS:
+        path = cache_dir / latency_file(tag)
+        if path.exists():
+            df = pd.read_csv(path)
+            df = df.rename(columns={"latency_s": f"{tag}_latency_s"})
+            dfs[tag] = df.set_index(["cluster_id", "prompt_id"])[[f"{tag}_latency_s"]]
+
+    if not dfs:
+        logger.info("[combine] No latency files found — skipping latency pivot.")
+        return
+
+    merged = None
+    for tag, df in dfs.items():
+        merged = df if merged is None else merged.join(df, how="outer")
+
+    merged = merged.reset_index()
+    merged["cluster_id"] = merged["cluster_id"].astype(int)
+    merged["split"] = merged["cluster_id"].map(split_map or {}).fillna("unknown")
+
+    cols = ["cluster_id", "split", "prompt_id",
+            "teacher_latency_s", "baseline_latency_s", "finetuned_latency_s"]
+    merged = merged[[c for c in cols if c in merged.columns]]
+    merged = merged.sort_values(["cluster_id", "prompt_id"])
+
+    out = eval_dir / FILE_LATENCY_PIVOT
+    merged.to_csv(out, index=False)
+    logger.info(f"[combine] Latency pivot → {out}  ({len(merged)} rows)")
+
+
+# ── Non-LLM metrics pivot ─────────────────────────────────────────────────────
+
+def combine_nonllm_by_cluster(eval_dir: Path, cache_dir: Path, split_map: dict | None) -> None:
+    """
+    Pivot non-LLM metric files: one row per (cluster_id, split, prompt_id).
+    Columns: cosine_same_{model} | cosine_multi_{model} | rouge_l_same_{model} | ...
+    """
+    from phase1.data.schema import nonllm_file, FILE_NONLLM_PIVOT
 
     METRICS = ["cosine_sim_same", "cosine_sim_multi", "rouge_l_same", "rouge_l_multi",
                "bertscore_f1_same", "bertscore_f1_multi"]
 
     frames = {}
     for tag in TAGS:
-        path = eval_dir / nonllm_file(tag)
+        path = cache_dir / nonllm_file(tag)
         if not path.exists():
             continue
         df = pd.read_csv(path)
@@ -66,52 +200,45 @@ def combine_nonllm_by_cluster(eval_dir: Path) -> None:
         for m in METRICS:
             if m in expanded.columns:
                 df[f"{m}_{tag}"] = expanded[m].values
-        frames[tag] = df.set_index(["cluster_id", "prompt_id"])
+        metric_tag_cols = [f"{m}_{tag}" for m in METRICS if f"{m}_{tag}" in df.columns]
+        frames[tag] = df.set_index(["cluster_id", "prompt_id"])[metric_tag_cols]
 
     if not frames:
-        logger.info("[combine] No nonllm files found — skipping nonllm_by_cluster.")
+        logger.info("[combine] No nonllm files — skipping nonllm_by_cluster.")
         return
 
-    # Merge all tags
     merged = None
+    for df in frames.values():
+        merged = df if merged is None else merged.join(df, how="outer")
+
+    merged = merged.reset_index()
+    merged["cluster_id"] = merged["cluster_id"].astype(int)
+    merged["split"] = merged["cluster_id"].map(split_map or {}).fillna("unknown")
+
+    # Order: cluster_id, split, prompt_id, then grouped by metric across models
     metric_cols = [f"{m}_{tag}" for m in METRICS for tag in TAGS]
-    for tag, df in frames.items():
-        tag_cols = [c for c in metric_cols if c in df.columns]
-        piece = df[tag_cols]
-        merged = piece if merged is None else merged.join(piece, how="outer")
-
-    merged = merged.reset_index().sort_values(["cluster_id", "prompt_id"])
-
-    # Order columns: cluster_id, prompt_id, then grouped by metric
-    ordered = ["cluster_id", "prompt_id"] + [
-        c for c in metric_cols if c in merged.columns
-    ]
+    ordered = ["cluster_id", "split", "prompt_id"] + [c for c in metric_cols if c in merged.columns]
     merged = merged[[c for c in ordered if c in merged.columns]]
+    merged = merged.sort_values(["cluster_id", "prompt_id"])
 
-    out = eval_dir / "nonllm_by_cluster.csv"
+    out = eval_dir / FILE_NONLLM_PIVOT
     merged.to_csv(out, index=False)
     logger.info(f"[combine] Non-LLM by-cluster pivot → {out}  ({len(merged)} rows)")
 
 
-# ── Per-cluster LLM judge pivot ───────────────────────────────────────────────
+# ── LLM judge pivot ───────────────────────────────────────────────────────────
 
-def combine_llm_by_cluster(eval_dir: Path) -> None:
+def combine_llm_by_cluster(eval_dir: Path, cache_dir: Path, split_map: dict | None) -> None:
     """
-    Pivot per-model LLM judge files into one wide cluster-level file.
-
-    Column order (left-to-right comparison per dimension):
-      cluster_id | prompt_id |
-      faithfulness_teacher | faithfulness_baseline | faithfulness_finetuned |
-      specificity_teacher  | specificity_baseline  | specificity_finetuned  |
-      [third dim varies: equivalence in reference mode, coherence in reference_free mode]
-      composite_teacher    | composite_baseline    | composite_finetuned
+    Pivot LLM judge files: one row per (cluster_id, split, prompt_id).
+    Columns: faithfulness_{model} | specificity_{model} | composite_{model} | ...
     """
-    from phase1.data.schema import llm_file
+    from phase1.data.schema import llm_file, FILE_LLM_PIVOT
 
     frames = {}
     all_dims: set = set()
     for tag in TAGS:
-        path = eval_dir / llm_file(tag)
+        path = cache_dir / llm_file(tag)
         if not path.exists():
             continue
         df = pd.read_csv(path)
@@ -120,179 +247,157 @@ def combine_llm_by_cluster(eval_dir: Path) -> None:
         all_dims.update(num_cols)
         for col in num_cols:
             df[f"{col}_{tag}"] = expanded[col].values
-        frames[tag] = df.set_index(["cluster_id", "prompt_id"])
+        tag_cols = [f"{c}_{tag}" for c in num_cols if f"{c}_{tag}" in df.columns]
+        frames[tag] = df.set_index(["cluster_id", "prompt_id"])[tag_cols]
 
     if not frames:
-        logger.info("[combine] No llm files found — skipping llm_by_cluster.")
+        logger.info("[combine] No llm files — skipping llm_by_cluster.")
         return
 
-    # Merge all tags
-    dim_list = sorted(all_dims - {"composite"}) + ["composite"]
-    metric_cols = [f"{d}_{tag}" for d in dim_list for tag in TAGS]
-
     merged = None
-    for tag, df in frames.items():
-        tag_cols = [c for c in metric_cols if c in df.columns]
-        piece = df[tag_cols]
-        merged = piece if merged is None else merged.join(piece, how="outer")
+    for df in frames.values():
+        merged = df if merged is None else merged.join(df, how="outer")
 
-    merged = merged.reset_index().sort_values(["cluster_id", "prompt_id"])
-    ordered = ["cluster_id", "prompt_id"] + [c for c in metric_cols if c in merged.columns]
-    merged = merged[[c for c in ordered if c in merged.columns]]
+    merged = merged.reset_index()
+    merged["cluster_id"] = merged["cluster_id"].astype(int)
+    merged["split"] = merged["cluster_id"].map(split_map or {}).fillna("unknown")
 
-    out = eval_dir / "llm_by_cluster.csv"
+    dim_list   = sorted(all_dims - {"composite"}) + ["composite"]
+    metric_cols = [f"{d}_{tag}" for d in dim_list for tag in TAGS]
+    ordered    = ["cluster_id", "split", "prompt_id"] + [c for c in metric_cols if c in merged.columns]
+    merged     = merged[[c for c in ordered if c in merged.columns]]
+    merged     = merged.sort_values(["cluster_id", "prompt_id"])
+
+    out = eval_dir / FILE_LLM_PIVOT
     merged.to_csv(out, index=False)
     logger.info(f"[combine] LLM judge by-cluster pivot → {out}  ({len(merged)} rows)")
 
 
-# ── Latency pivot ─────────────────────────────────────────────────────────────
+# ── Summary tables ────────────────────────────────────────────────────────────
 
-def combine_latencies(eval_dir: Path) -> None:
+def combine_nonllm_summary(eval_dir: Path, cache_dir: Path, split_map: dict | None) -> None:
     """
-    Pivot per-model latency CSVs into one wide cluster-level file.
-
-    Column order (easy left-to-right comparison per prompt):
-      cluster_id | P1_teacher_s | P1_baseline_s | P1_finetuned_s | P2_teacher_s | …
-
-    Missing models produce NaN columns.
+    Mean non-LLM scores per (split, model). Reads nonllm_by_cluster.csv.
     """
-    from phase1.data.schema import latency_file, FILE_LATENCY_PIVOT
+    from phase1.data.schema import FILE_METRICS_SUMMARY, FILE_NONLLM_PIVOT
 
-    dfs = {}
-    for tag in TAGS:
-        path = eval_dir / latency_file(tag)
-        if path.exists():
-            df = pd.read_csv(path)
-            # Rename latency_s to tag-specific column
-            df = df.rename(columns={"latency_s": tag})
-            dfs[tag] = df.set_index(["cluster_id", "prompt_id"])
-        else:
-            logger.debug(f"[combine] {path.name} not found — skipping.")
-
-    if not dfs:
-        logger.info("[combine] No latency files found — skipping latency pivot.")
+    pivot_path = eval_dir / FILE_NONLLM_PIVOT
+    if not pivot_path.exists():
         return
 
-    # Merge all available tags on (cluster_id, prompt_id)
-    combined = None
-    for tag, df in dfs.items():
-        combined = df[[tag]] if combined is None else combined.join(df[[tag]], how="outer")
-
-    combined = combined.reset_index()
-
-    # Pivot: one row per cluster, columns ordered by prompt then model
-    rows = {}
-    for _, row in combined.iterrows():
-        cid = int(row["cluster_id"])
-        pid = str(row["prompt_id"])
-        if cid not in rows:
-            rows[cid] = {"cluster_id": cid}
+    pivot = pd.read_csv(pivot_path)
+    rows  = []
+    for split in ["train", "val", "test"]:
+        split_df = pivot[pivot["split"] == split] if "split" in pivot.columns else pivot
         for tag in TAGS:
-            col = f"{pid}_{tag}_s"
-            rows[cid][col] = row.get(tag, float("nan"))
-
-    # Build ordered column list: cluster_id | P1_teacher_s | P1_baseline_s | … | P5_finetuned_s
-    ordered_cols = ["cluster_id"] + [
-        f"{pid}_{tag}_s"
-        for pid in PROMPT_IDS
-        for tag in TAGS
-    ]
-
-    pivot_df = pd.DataFrame(list(rows.values()))
-    # Keep only columns that actually exist
-    existing_cols = [c for c in ordered_cols if c in pivot_df.columns]
-    pivot_df = pivot_df[existing_cols].sort_values("cluster_id")
-
-    out = eval_dir / FILE_LATENCY_PIVOT
-    pivot_df.to_csv(out, index=False)
-    logger.info(f"[combine] Latency pivot → {out}  ({len(pivot_df)} clusters)")
-
-
-# ── Non-LLM metrics summary ───────────────────────────────────────────────────
-
-def combine_nonllm_summary(eval_dir: Path) -> None:
-    """
-    Read nonllm_{tag}.csv files, unpack JSON metrics column, compute means
-    per model, and write metrics_summary.csv.
-
-    Row order: teacher → baseline → finetuned (ceiling → baseline → fine-tuned).
-    """
-    from phase1.data.schema import nonllm_file, FILE_METRICS_SUMMARY
-
-    rows = []
-    for tag in TAGS:
-        path = eval_dir / nonllm_file(tag)
-        if not path.exists():
-            logger.debug(f"[combine] {path.name} not found — skipping.")
-            continue
-
-        df = pd.read_csv(path)
-        if "nonllm_metrics" not in df.columns:
-            logger.warning(f"[combine] {path.name} missing 'nonllm_metrics' column.")
-            continue
-
-        # Unpack JSON blobs
-        metrics_df = pd.json_normalize(df["nonllm_metrics"].apply(json.loads))
-        means      = metrics_df.mean().to_dict()
-        rows.append({"model": tag, **means})
+            tag_cols = [c for c in pivot.columns if c.endswith(f"_{tag}")]
+            if not tag_cols:
+                continue
+            means = split_df[tag_cols].mean()
+            clean_means = {c.replace(f"_{tag}", ""): v for c, v in means.items()}
+            rows.append({"split": split, "model": tag, **clean_means})
 
     if not rows:
-        logger.info("[combine] No non-LLM metric files found — skipping summary.")
         return
 
     summary = pd.DataFrame(rows)
-    # model column first, then metrics
-    metric_cols = [c for c in summary.columns if c != "model"]
-    summary     = summary[["model"] + metric_cols]
-
-    out = eval_dir / FILE_METRICS_SUMMARY
+    out     = eval_dir / FILE_METRICS_SUMMARY
     summary.to_csv(out, index=False)
     logger.info(f"[combine] Non-LLM metrics summary → {out}")
-    _log_summary_table(summary, "NON-LLM METRICS SUMMARY")
+    _log_summary_table(summary, "NON-LLM METRICS SUMMARY (by split)")
 
 
-# ── LLM judge summary ─────────────────────────────────────────────────────────
-
-def combine_llm_summary(eval_dir: Path) -> None:
+def combine_llm_summary(eval_dir: Path, cache_dir: Path, split_map: dict | None) -> None:
     """
-    Read llm_{tag}.csv files, unpack JSON metrics column, compute means,
-    write judge_summary.csv.
+    Mean LLM judge scores per (split, model). Reads llm_by_cluster.csv.
     """
-    from phase1.data.schema import llm_file, FILE_JUDGE_SUMMARY
+    from phase1.data.schema import FILE_JUDGE_SUMMARY, FILE_LLM_PIVOT
 
-    rows = []
-    for tag in TAGS:
-        path = eval_dir / llm_file(tag)
-        if not path.exists():
-            logger.debug(f"[combine] {path.name} not found — skipping.")
-            continue
+    pivot_path = eval_dir / FILE_LLM_PIVOT
+    if not pivot_path.exists():
+        return
 
-        df = pd.read_csv(path)
-        if "llm_metrics" not in df.columns:
-            logger.warning(f"[combine] {path.name} missing 'llm_metrics' column.")
-            continue
-
-        metrics_df = pd.json_normalize(df["llm_metrics"].apply(json.loads))
-        # Exclude reasoning (text) from numeric means
-        num_cols   = metrics_df.select_dtypes("number").columns.tolist()
-        means      = metrics_df[num_cols].mean().to_dict()
-        rows.append({"model": tag, **means})
+    pivot = pd.read_csv(pivot_path)
+    rows  = []
+    for split in ["train", "val", "test"]:
+        split_df = pivot[pivot["split"] == split] if "split" in pivot.columns else pivot
+        for tag in TAGS:
+            tag_cols = [c for c in pivot.columns if c.endswith(f"_{tag}")]
+            if not tag_cols:
+                continue
+            means = split_df[tag_cols].mean()
+            clean_means = {c.replace(f"_{tag}", ""): v for c, v in means.items()}
+            rows.append({"split": split, "model": tag, **clean_means})
 
     if not rows:
-        logger.info("[combine] No LLM judge files found — skipping summary.")
         return
 
     summary = pd.DataFrame(rows)
-    metric_cols = [c for c in summary.columns if c != "model"]
-    summary     = summary[["model"] + metric_cols]
-
-    out = eval_dir / FILE_JUDGE_SUMMARY
+    out     = eval_dir / FILE_JUDGE_SUMMARY
     summary.to_csv(out, index=False)
     logger.info(f"[combine] LLM judge summary → {out}")
-    _log_summary_table(summary, "LLM JUDGE SUMMARY")
+    _log_summary_table(summary, "LLM JUDGE SUMMARY (by split)")
 
 
-# ── Logging helper ────────────────────────────────────────────────────────────
+# ── Optional master CSV ───────────────────────────────────────────────────────
+
+def create_master_csv(eval_dir: str | Path) -> Path:
+    """
+    Join all four pivot files into one wide master CSV for ad-hoc analysis.
+
+    Usage:
+        python main.py --phase 1 --config configs/phase1_config.yaml \\
+            --create_master_csv --run_dir outputs/20260820_0014_SmolLM2_ep2
+    """
+    from phase1.data.schema import (FILE_LABELS_PIVOT, FILE_LATENCY_PIVOT,
+                                     FILE_NONLLM_PIVOT, FILE_LLM_PIVOT)
+
+    eval_dir = Path(eval_dir)
+    KEY      = ["cluster_id", "split", "prompt_id"]
+
+    master = None
+    for fname in [FILE_LABELS_PIVOT, FILE_LATENCY_PIVOT, FILE_NONLLM_PIVOT, FILE_LLM_PIVOT]:
+        p = eval_dir / fname
+        if not p.exists():
+            logger.warning(f"[combine] {fname} not found — skipping in master.")
+            continue
+        df = pd.read_csv(p)
+        if master is None:
+            master = df
+        else:
+            extra = [c for c in df.columns if c not in KEY]
+            master = master.merge(df[KEY + extra], on=KEY, how="outer")
+
+    if master is None:
+        logger.warning("[combine] No pivot files found — master CSV not created.")
+        return eval_dir
+
+    out = eval_dir / "master_by_cluster.csv"
+    master.sort_values(KEY).to_csv(out, index=False)
+    logger.info(f"[combine] Master CSV → {out}  ({len(master)} rows, {len(master.columns)} cols)")
+    return out
+
+
+# ── Private helpers ───────────────────────────────────────────────────────────
+
+def _load_split_map(eval_dir: Path) -> dict:
+    """Try to load split map from data/processed/ next to the eval dir."""
+    from phase1.data.schema import FILE_CLUSTER_SPLITS
+
+    # Look in parent dirs for the processed data directory
+    for candidate in [
+        eval_dir.parent.parent / "data" / "processed" / FILE_CLUSTER_SPLITS,
+        eval_dir.parent / "data" / "processed" / FILE_CLUSTER_SPLITS,
+        Path("data") / "processed" / FILE_CLUSTER_SPLITS,
+    ]:
+        if candidate.exists():
+            with open(candidate) as f:
+                raw = json.load(f)
+            return {int(k): v for k, v in raw.items()}
+
+    logger.warning("[combine] cluster_splits.json not found — split column will be 'unknown'.")
+    return {}
+
 
 def _log_summary_table(df: pd.DataFrame, title: str) -> None:
     try:
@@ -301,5 +406,4 @@ def _log_summary_table(df: pd.DataFrame, title: str) -> None:
                          floatfmt=".4f", showindex=False)
     except ImportError:
         table = df.to_string(index=False)
-
     logger.info(f"\n{'=' * 65}\n  {title}\n{'=' * 65}\n{table}\n{'=' * 65}")

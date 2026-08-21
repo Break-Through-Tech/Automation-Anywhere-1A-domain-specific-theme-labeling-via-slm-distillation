@@ -144,8 +144,10 @@ def run_llm_judge(
         )
         results = _make_perfect_teacher_rows(sampled, dims)
         results_df = pd.DataFrame(results)
-        results_df.to_csv(output_path, index=False)
-        _save_llm_tag_file(results_df, output_path, tag, dims)
+        cache_dir = Path(output_path).parent / "_cache"
+        cache_dir.mkdir(exist_ok=True)
+        results_df.to_csv(cache_dir / Path(output_path).name, index=False)
+        _save_llm_tag_file(results_df, str(cache_dir / Path(output_path).name), tag, dims)
         _log_judge_summary(results_df, fine_tuned, eval_label, dims)
         return results_df
 
@@ -207,10 +209,14 @@ def run_llm_judge(
             logger.info(f"[llm_judge] {i + 1}/{len(sampled)} judged.")
 
     results_df = pd.DataFrame(results)
-    results_df.to_csv(output_path, index=False)
-    logger.info(f"[llm_judge] Judge scores → {output_path}")
+    # Save to _cache/ (internal, not for direct user review)
+    cache_dir = Path(output_path).parent / "_cache"
+    cache_dir.mkdir(exist_ok=True)
+    cache_path = cache_dir / Path(output_path).name
+    results_df.to_csv(cache_path, index=False)
+    logger.info(f"[llm_judge] Judge scores → {cache_path}")
 
-    _save_llm_tag_file(results_df, output_path, tag, dims)
+    _save_llm_tag_file(results_df, str(cache_path), tag, dims)
     _log_judge_summary(results_df, fine_tuned, eval_label, dims)
     return results_df
 

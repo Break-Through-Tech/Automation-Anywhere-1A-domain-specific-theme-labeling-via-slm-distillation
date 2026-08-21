@@ -102,13 +102,16 @@ def run_evaluation(
         results_df, eval_cfg["bertscore_model"], labeled_df, model_id, run_bertscore
     )
 
-    # ── Save full results (internal) ──────────────────────────────────────────
-    results_df.to_csv(output_path, index=False)
-    logger.info(f"[metrics] Full results → {output_path}")
+    # ── Save full results (internal, in _cache/) ──────────────────────────────
+    cache_dir = Path(output_path).parent / "_cache"
+    cache_dir.mkdir(exist_ok=True)
+    cache_path = cache_dir / Path(output_path).name
+    results_df.to_csv(cache_path, index=False)
+    logger.info(f"[metrics] Full results → {cache_path}")
 
-    # ── Save nonllm_{tag}.csv (combine-friendly, JSON metrics blob) ───────────
+    # ── Save nonllm_{tag}.csv in _cache/ (combine-friendly JSON metrics blob) ─
     if tag:
-        nonllm_path = Path(output_path).parent / nonllm_file(tag)
+        nonllm_path = cache_dir / nonllm_file(tag)
         nonllm_rows = []
         for _, r in results_df.iterrows():
             metrics_blob = {
@@ -127,7 +130,7 @@ def run_evaluation(
                 "nonllm_metrics":  json.dumps(metrics_blob),
             })
         pd.DataFrame(nonllm_rows).to_csv(nonllm_path, index=False)
-        logger.info(f"[metrics] Non-LLM metrics (JSON) → {nonllm_path}")
+        logger.info(f"[metrics] Non-LLM metrics (JSON cache) → {nonllm_path}")
 
     _log_summary(results_df, fine_tuned, eval_label)
     return results_df
