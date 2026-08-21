@@ -246,6 +246,18 @@ def build_parser() -> argparse.ArgumentParser:
         help="[demo mode] Number of tickets to use (overrides top_k in config).",
     )
     parser.add_argument(
+        "--create_master_csv",
+        action="store_true",
+        help="Join the four cluster pivot CSVs into one master_by_cluster.csv. "
+             "Requires --run_dir pointing to an existing run directory.",
+    )
+    parser.add_argument(
+        "--run_dir",
+        type=str,
+        default=None,
+        help="Path to an existing run directory. Used with --create_master_csv.",
+    )
+    parser.add_argument(
         "--log_level",
         type=str,
         default="INFO",
@@ -292,6 +304,21 @@ def main() -> None:
         f"  Drive root:  {cfg['paths']['drive_root']}\n"
         f"{'=' * 60}"
     )
+
+    # ── Master CSV mode ───────────────────────────────────────────────────────
+    if args.create_master_csv:
+        from phase1.evaluation.combine import create_master_csv
+        run_dir = args.run_dir
+        if not run_dir:
+            logger.error("--run_dir is required with --create_master_csv.")
+            sys.exit(1)
+        eval_dir = Path(run_dir) / "evaluation"
+        if not eval_dir.exists():
+            logger.error(f"Evaluation directory not found: {eval_dir}")
+            sys.exit(1)
+        out = create_master_csv(eval_dir)
+        print(f"Master CSV created: {out}")
+        return
 
     # ── Demo mode ─────────────────────────────────────────────────────────────
     if args.mode == "demo":

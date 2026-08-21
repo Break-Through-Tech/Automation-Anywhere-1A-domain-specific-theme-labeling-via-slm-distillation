@@ -111,6 +111,18 @@ def build_dataset(cfg: dict, labeled_df: pd.DataFrame, tokenizer) -> dict:
             f"[dataset] {split_name}: {len(examples)} examples → {path}"
         )
 
+    # Save cluster → split mapping so evaluation can label pivot rows correctly
+    from phase1.data.schema import FILE_CLUSTER_SPLITS
+    split_map = {}
+    for split_name, (cluster_set, _) in splits.items():
+        for cid in cluster_set:
+            split_map[int(cid)] = split_name
+    import json as _json
+    splits_path = out_dir / FILE_CLUSTER_SPLITS
+    with open(splits_path, "w") as f:
+        _json.dump(split_map, f)
+    logger.info(f"[dataset] Cluster split map saved → {splits_path}")
+
     return paths
 
 
