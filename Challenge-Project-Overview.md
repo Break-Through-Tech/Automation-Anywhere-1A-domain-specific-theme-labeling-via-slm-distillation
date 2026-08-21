@@ -95,7 +95,7 @@ The following resources will help your team understand the problem space and pot
 
  **Other ways to reach out to me with questions:** 
 * Your team's channel within Break Through Tech’s Discord space.
-* Email Please copy your teammates and AI Studio Coach. Here's my email: archanduttads@gmail.com 
+* Please copy your teammates and AI Studio Coach. Here's my email: archanduttads@gmail.com 
 * Request a team check-in on Zoom on Google Meet.
 * Note: I will aim to respond within 48 hours. Please reach out to your AI Studio Coach with urgent questions.
 * Availability:  Tuesday, Wednesday, Thursday, anytime between 7 pm and 8 pm PST
