@@ -5,7 +5,7 @@ Your code lives on GitHub, your outputs live on Google Drive, and Colab is just
 the machine you use to run training. When a session ends, Drive keeps everything safe.
 
 ---
-
+NOTE: Keep/Save all your keys in one notepad for easy access. 
 ## What you need (one-time, ~30 minutes)
 
 ### 1. Google account
