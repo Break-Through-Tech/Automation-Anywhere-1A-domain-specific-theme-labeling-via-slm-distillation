@@ -122,19 +122,22 @@ def _sanitize_model_ids(cfg: dict) -> None:
 
 def setup_colab_env(cfg: dict) -> None:
     """
-    If running on Google Colab:
-    - Mount Google Drive (if configured)
-    - Set HF_HOME to Drive cache
-    - Load API keys from Colab Secrets
+    Configure the Colab environment: mount Drive, set HF cache, load API keys.
+
+    When main.py is run as a subprocess from a notebook cell (e.g. !python main.py),
+    the Colab kernel is not accessible. Drive is already mounted and API keys are
+    already in os.environ from the setup notebook. This function handles both cases:
+      - Direct kernel call: mounts Drive, loads Secrets
+      - Subprocess call: skips mount (already done), reads keys from os.environ
     """
     try:
-        import google.colab  # only available in Colab
+        import google.colab
         _in_colab = True
     except ImportError:
         _in_colab = False
 
     if not _in_colab:
-        # Load API keys from .env file (local development)
+        # Local machine — load from .env file
         try:
             from dotenv import load_dotenv
             load_dotenv()
@@ -143,33 +146,53 @@ def setup_colab_env(cfg: dict) -> None:
             pass
         return
 
-    # ── Running in Colab ──────────────────────────────────────────────────────
     colab_cfg = cfg.get("colab", {})
 
+    # ── Mount Drive only if not already mounted ───────────────────────────────
+    # When called from a notebook subprocess, Drive is already mounted by Cell 2.
+    # Calling drive.mount() from a subprocess fails (no kernel access).
     if colab_cfg.get("mount_drive", True):
-        from google.colab import drive
-        drive.mount("/content/drive")
-        logging.getLogger(__name__).info("[main] Google Drive mounted.")
+        if os.path.exists("/content/drive/MyDrive"):
+            logging.getLogger(__name__).info(
+                "[main] Drive already mounted — skipping drive.mount()."
+            )
+        else:
+            try:
+                from google.colab import drive
+                drive.mount("/content/drive")
+                logging.getLogger(__name__).info("[main] Google Drive mounted.")
+            except Exception as e:
+                logging.getLogger(__name__).warning(
+                    f"[main] drive.mount() failed: {e}. "
+                    "Run the setup notebook first (Cell 2 mounts Drive)."
+                )
 
-    # Set HF cache
+    # ── Set HF cache path ─────────────────────────────────────────────────────
     hf_cache = cfg["paths"].get("hf_cache", "")
     if hf_cache:
         os.makedirs(hf_cache, exist_ok=True)
         os.environ["HF_HOME"] = hf_cache
+        logging.getLogger(__name__).info(f"[main] HF cache → {hf_cache}")
 
-    # Load secrets
-    try:
-        from google.colab import userdata
-        for key in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "HF_TOKEN"):
-            try:
-                val = userdata.get(key)
-                if val:
-                    os.environ[key] = val
-            except Exception:
-                pass
-        logging.getLogger(__name__).info("[main] Colab Secrets loaded.")
-    except Exception:
-        pass
+    # ── Load API keys ─────────────────────────────────────────────────────────
+    # Keys are loaded from os.environ first (set by the notebook's Cell 6).
+    # Only fall back to Colab Secrets if not already present — the Secrets API
+    # may not be accessible from a subprocess.
+    missing_keys = [k for k in ("ANTHROPIC_API_KEY", "OPENAI_API_KEY", "HF_TOKEN")
+                    if k not in os.environ or not os.environ[k]]
+    if missing_keys:
+        try:
+            from google.colab import userdata
+            for key in missing_keys:
+                try:
+                    val = userdata.get(key)
+                    if val:
+                        os.environ[key] = val
+                except Exception:
+                    pass
+            logging.getLogger(__name__).info("[main] Colab Secrets loaded.")
+        except Exception:
+            pass  # Secrets API unavailable in subprocess — keys must be in os.environ
 
 
 # ── Argument parser ───────────────────────────────────────────────────────────
