@@ -381,21 +381,38 @@ def create_master_csv(eval_dir: str | Path) -> Path:
 # ── Private helpers ───────────────────────────────────────────────────────────
 
 def _load_split_map(eval_dir: Path) -> dict:
-    """Try to load split map from data/processed/ next to the eval dir."""
+    """
+    Try to load cluster split mapping from data/processed/cluster_splits.json.
+
+    Directory depth reference (eval_dir is always .../.../evaluation/):
+      local:  ./outputs/{run_id}/evaluation          → go up 2 levels for drive_root
+      Colab:  /content/drive/.../slm-distillation/outputs/{run_id}/evaluation
+                                                     → go up 3 levels for drive_root
+    """
     from phase1.data.schema import FILE_CLUSTER_SPLITS
 
-    # Look in parent dirs for the processed data directory
-    for candidate in [
+    candidates = [
+        # Go up 3 levels: eval → run_id → outputs → drive_root
+        eval_dir.parent.parent.parent / "data" / "processed" / FILE_CLUSTER_SPLITS,
+        # Go up 2 levels: eval → run_id → outputs (local fallback)
         eval_dir.parent.parent / "data" / "processed" / FILE_CLUSTER_SPLITS,
+        # Go up 1 level  
         eval_dir.parent / "data" / "processed" / FILE_CLUSTER_SPLITS,
+        # CWD relative (running from project root locally)
         Path("data") / "processed" / FILE_CLUSTER_SPLITS,
-    ]:
+    ]
+
+    for candidate in candidates:
         if candidate.exists():
             with open(candidate) as f:
                 raw = json.load(f)
+            logger.debug(f"[combine] Loaded split map from {candidate}")
             return {int(k): v for k, v in raw.items()}
 
-    logger.warning("[combine] cluster_splits.json not found — split column will be 'unknown'.")
+    logger.warning(
+        "[combine] cluster_splits.json not found in any expected location — "
+        "split column will be 'unknown'. Run with eval_all_splits to regenerate."
+    )
     return {}
 
 
