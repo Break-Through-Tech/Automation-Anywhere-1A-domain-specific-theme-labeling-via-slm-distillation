@@ -83,7 +83,8 @@ Run this notebook at the start of **every** Colab session. Takes 5–8 minutes.
 4. Click **Open notebook**
 5. In the dialog, click the **GitHub** tab
 6. First time: click **"Sign in with GitHub"** and authorise (one-time step)
-7. Search for the repository, select **your branch** from the dropdown,
+7. Put the GitHub URL of the Repo in the Search Box
+8. Search for the repository, select **your branch** from the dropdown,
    open `notebooks/00_session_setup.ipynb`
 
 > **Shortcut from session 2 onwards:** File → Open notebook → **Recent**
