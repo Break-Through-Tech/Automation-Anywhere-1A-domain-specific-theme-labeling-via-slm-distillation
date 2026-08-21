@@ -158,6 +158,7 @@ def _get_llm_caller(provider: str, llm_cfg: dict):
 # ── Anthropic ─────────────────────────────────────────────────────────────────
 
 def _call_anthropic(messages: list[dict], llm_cfg: dict) -> str:
+    import re
     import anthropic
 
     api_key = os.environ.get("ANTHROPIC_API_KEY")
@@ -166,7 +167,6 @@ def _call_anthropic(messages: list[dict], llm_cfg: dict) -> str:
 
     client = anthropic.Anthropic(api_key=api_key)
 
-    # Anthropic separates system from user/assistant messages
     system_msg = next((m["content"] for m in messages if m["role"] == "system"), "")
     user_msgs  = [m for m in messages if m["role"] != "system"]
 
@@ -181,14 +181,28 @@ def _call_anthropic(messages: list[dict], llm_cfg: dict) -> str:
         reraise=True,
     )
     def _call():
-        response = client.messages.create(
+        kwargs = dict(
             model=llm_cfg["model"],
             max_tokens=llm_cfg["max_tokens"],
             temperature=llm_cfg["temperature"],
             system=system_msg,
             messages=user_msgs,
         )
-        return response.content[0].text
+        # Self-healing: remove any param the installed SDK version rejects
+        for _ in range(len(kwargs) + 1):
+            try:
+                return client.messages.create(**kwargs).content[0].text
+            except TypeError as exc:
+                match = re.search(r"unexpected keyword argument '([^']+)'", str(exc))
+                if not match:
+                    raise
+                bad = match.group(1)
+                logger.warning(
+                    f"[labeling] Anthropic SDK rejected param '{bad}' "
+                    f"(SDK v{anthropic.__version__}) — removing and retrying."
+                )
+                kwargs.pop(bad, None)
+        raise RuntimeError("[labeling] Could not call Anthropic API — all params rejected.")
 
     return _call()
 
@@ -196,6 +210,7 @@ def _call_anthropic(messages: list[dict], llm_cfg: dict) -> str:
 # ── OpenAI ────────────────────────────────────────────────────────────────────
 
 def _call_openai(messages: list[dict], llm_cfg: dict) -> str:
+    import re
     import openai
 
     api_key = os.environ.get("OPENAI_API_KEY")
@@ -215,12 +230,24 @@ def _call_openai(messages: list[dict], llm_cfg: dict) -> str:
         reraise=True,
     )
     def _call():
-        response = client.chat.completions.create(
+        kwargs = dict(
             model=llm_cfg["model"],
             max_tokens=llm_cfg["max_tokens"],
             temperature=llm_cfg["temperature"],
             messages=messages,
         )
-        return response.choices[0].message.content
+        for _ in range(len(kwargs) + 1):
+            try:
+                return client.chat.completions.create(**kwargs).choices[0].message.content
+            except TypeError as exc:
+                match = re.search(r"unexpected keyword argument '([^']+)'", str(exc))
+                if not match:
+                    raise
+                bad = match.group(1)
+                logger.warning(
+                    f"[labeling] OpenAI SDK rejected param '{bad}' — removing and retrying."
+                )
+                kwargs.pop(bad, None)
+        raise RuntimeError("[labeling] Could not call OpenAI API — all params rejected.")
 
     return _call()

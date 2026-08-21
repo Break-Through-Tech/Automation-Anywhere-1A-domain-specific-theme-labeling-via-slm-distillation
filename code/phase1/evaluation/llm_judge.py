@@ -317,6 +317,7 @@ def _judge_openai(ticket_texts, reference, candidate, judge_cfg):
 
 
 def _anthropic_call(messages: list[dict], judge_cfg: dict) -> str:
+    import re
     import anthropic
     from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
@@ -329,18 +330,31 @@ def _anthropic_call(messages: list[dict], judge_cfg: dict) -> str:
         reraise=True,
     )
     def _call():
-        resp = client.messages.create(
+        kwargs = dict(
             model=judge_cfg["model"],
             max_tokens=200,
             temperature=judge_cfg["temperature"],
             messages=messages,
         )
-        return resp.content[0].text
+        for _ in range(len(kwargs) + 1):
+            try:
+                return client.messages.create(**kwargs).content[0].text
+            except TypeError as exc:
+                match = re.search(r"unexpected keyword argument '([^']+)'", str(exc))
+                if not match:
+                    raise
+                bad = match.group(1)
+                logger.warning(
+                    f"[llm_judge] Anthropic SDK rejected param '{bad}' — removing and retrying."
+                )
+                kwargs.pop(bad, None)
+        raise RuntimeError("[llm_judge] Could not call Anthropic API — all params rejected.")
 
     return _call()
 
 
 def _openai_call(messages: list[dict], judge_cfg: dict) -> str:
+    import re
     import openai
     from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
@@ -353,13 +367,25 @@ def _openai_call(messages: list[dict], judge_cfg: dict) -> str:
         reraise=True,
     )
     def _call():
-        resp = client.chat.completions.create(
+        kwargs = dict(
             model=judge_cfg["model"],
             max_tokens=200,
             temperature=judge_cfg["temperature"],
             messages=messages,
         )
-        return resp.choices[0].message.content
+        for _ in range(len(kwargs) + 1):
+            try:
+                return client.chat.completions.create(**kwargs).choices[0].message.content
+            except TypeError as exc:
+                match = re.search(r"unexpected keyword argument '([^']+)'", str(exc))
+                if not match:
+                    raise
+                bad = match.group(1)
+                logger.warning(
+                    f"[llm_judge] OpenAI SDK rejected param '{bad}' — removing and retrying."
+                )
+                kwargs.pop(bad, None)
+        raise RuntimeError("[llm_judge] Could not call OpenAI API — all params rejected.")
 
     return _call()
 
