@@ -120,7 +120,7 @@ student_slm:
   #   "HuggingFaceTB/SmolLM2-1.7B-Instruct"               (1.7B, in-between)
   #   "HuggingFaceTB/SmolLM2-360M-Instruct"               (0.36B, fastest)
 
-  model_id:  "HuggingFaceTB/SmolLM2-360M-Instruct"
+  model_id:  "microsoft/Phi-3.5-mini-instruct"
   max_seq_length: 2048                             # max tokens per training example
 
 # ── LoRA / QLoRA configuration ───────────────────────────────────────────────
@@ -139,7 +139,7 @@ qlora:                       # used only in "colab" device_mode
 
 # ── Training (SFTConfig) ──────────────────────────────────────────────────────
 training:
-  num_train_epochs:              3
+  num_train_epochs:              5
   per_device_train_batch_size:   4
   gradient_accumulation_steps:   4        # effective batch size = 16
   learning_rate:                 2.0e-4
@@ -176,7 +176,7 @@ evaluation:
   # true            — inference on ALL clusters (train + val + test). Shows
   #                   training and validation metrics alongside test metrics,
   #                   enabling overfitting analysis in metrics_summary.csv.
-  eval_all_splits: false
+  eval_all_splits: true
 
   # ── Cosine similarity (PRIMARY metric — always runs) ──────────────────────
   embedding_model: "all-mpnet-base-v2"
