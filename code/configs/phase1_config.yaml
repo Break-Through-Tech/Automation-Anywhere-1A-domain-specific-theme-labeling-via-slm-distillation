@@ -170,6 +170,14 @@ evaluation:
   # Leave null for a normal training + evaluation run.
   existing_run_dir: null
 
+  # ── Which clusters to run SLM inference on ────────────────────────────────
+  # false (default) — inference only on TEST clusters. Faster; produces 3–5
+  #                   cluster rows in pivot files.
+  # true            — inference on ALL clusters (train + val + test). Shows
+  #                   training and validation metrics alongside test metrics,
+  #                   enabling overfitting analysis in metrics_summary.csv.
+  eval_all_splits: false
+
   # ── Cosine similarity (PRIMARY metric — always runs) ──────────────────────
   embedding_model: "all-mpnet-base-v2"
 
@@ -206,7 +214,7 @@ evaluation:
 inference:
   # Path to the LoRA adapter from a completed training run.
   # Example: "outputs/20260819_2347_SmolLM2-1.7B-Instruct_ep6/models/lora_adapter"
-  adapter_dir: "outputs/20260819_2209_SmolLM2-360M-Instruct_ep8/models/lora_adapter"
+  adapter_dir: null
 
   # Path to a plain text file with one support ticket per line.
   # Example: "demo_tickets.txt"
