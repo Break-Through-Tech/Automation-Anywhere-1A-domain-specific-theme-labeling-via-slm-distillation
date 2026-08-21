@@ -214,7 +214,7 @@ evaluation:
 inference:
   # Path to the LoRA adapter from a completed training run.
   # Example: "outputs/20260819_2347_SmolLM2-1.7B-Instruct_ep6/models/lora_adapter"
-  adapter_dir: null
+  adapter_dir: "outputs/20260821_2243_SmolLM2-360M-Instruct_ep3/models/lora_adapter"
 
   # Path to a plain text file with one support ticket per line.
   # Example: "demo_tickets.txt"
