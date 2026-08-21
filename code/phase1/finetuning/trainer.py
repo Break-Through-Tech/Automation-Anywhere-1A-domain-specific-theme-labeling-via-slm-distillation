@@ -105,14 +105,16 @@ def run_finetuning(
         logger.info("[trainer] Loading model for fine-tuning ...")
         model, tokenizer = load_model_and_tokenizer(cfg)
 
-    # ── Apply LoRA config ─────────────────────────────────────────────────────
+    # Apply LoRA config ─────────────────────────────────────────────────────────
     # If Unsloth is available (Colab), model already has LoRA applied.
     # Otherwise apply via PEFT.
     if not _is_unsloth_model(model):
         peft_config = LoraConfig(
             r=lora_cfg["r"],
             lora_alpha=lora_cfg["lora_alpha"],
-            target_modules=lora_cfg["target_modules"],
+            target_modules=_resolve_target_modules(
+                cfg["student_slm"]["model_id"].strip(), lora_cfg["target_modules"]
+            ),
             lora_dropout=lora_cfg["lora_dropout"],
             bias=lora_cfg["bias"],
             task_type=TaskType.CAUSAL_LM,
@@ -259,8 +261,9 @@ def _load_colab(model_id: str, cfg: dict):
     """QLoRA with 4-bit NF4 quantisation. Tries Unsloth first, falls back to PEFT."""
     from transformers import AutoTokenizer
 
-    qlora_cfg = cfg["qlora"]
-    lora_cfg  = cfg["lora"]
+    qlora_cfg      = cfg["qlora"]
+    lora_cfg       = cfg["lora"]
+    target_modules = _resolve_target_modules(model_id, lora_cfg["target_modules"])
 
     try:
         from unsloth import FastLanguageModel
@@ -274,7 +277,7 @@ def _load_colab(model_id: str, cfg: dict):
             model,
             r=lora_cfg["r"],
             lora_alpha=lora_cfg["lora_alpha"],
-            target_modules=lora_cfg["target_modules"],
+            target_modules=target_modules,
             lora_dropout=lora_cfg["lora_dropout"],
             bias=lora_cfg["bias"],
             use_gradient_checkpointing="unsloth",
@@ -485,7 +488,41 @@ def _safe_training_args(training_kwargs: dict):
 
 # ── Private: utilities ────────────────────────────────────────────────────────
 
-def _configure_tokenizer(tokenizer, model) -> None:
+def _resolve_target_modules(model_id: str, target_modules_cfg) -> list:
+    """
+    Convert the target_modules config value into an explicit list of layer names.
+
+    "all-linear" is a PEFT special keyword that works in some versions but in
+    others is iterated character-by-character (producing {'a','l','l','-',...}).
+    We always resolve it to explicit names so behaviour is version-independent.
+
+    Model-to-layer mapping
+    ----------------------
+    LLaMA / SmolLM2 / Qwen / Mistral / Gemma architecture:
+        q_proj  k_proj  v_proj  o_proj   (attention)
+        gate_proj  up_proj  down_proj    (MLP)
+
+    Phi-3 / Phi-3.5 architecture:
+        qkv_proj  o_proj               (attention, combined QKV)
+        gate_up_proj  down_proj        (MLP, combined gate+up)
+    """
+    if target_modules_cfg != "all-linear":
+        # User gave an explicit list — use it as-is
+        return target_modules_cfg
+
+    mid = model_id.lower()
+    if any(x in mid for x in ("phi-3.5", "phi-3", "phi3")):
+        modules = ["qkv_proj", "o_proj", "gate_up_proj", "down_proj"]
+    else:
+        # LLaMA / SmolLM2 / Mistral / Qwen / Gemma
+        modules = ["q_proj", "k_proj", "v_proj", "o_proj",
+                   "gate_proj", "up_proj", "down_proj"]
+
+    logger.info(
+        f"[trainer] Resolved target_modules 'all-linear' → {modules} "
+        f"(model: {model_id.split('/')[-1]})"
+    )
+    return modules
     """Ensure padding token and left-padding for generation."""
     if tokenizer.pad_token is None:
         tokenizer.pad_token = tokenizer.eos_token
