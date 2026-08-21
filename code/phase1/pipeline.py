@@ -191,19 +191,23 @@ def run_phase1(cfg: dict) -> None:
         # ── STEP 5: Fine-tuning ───────────────────────────────────────────────
         if pipe_cfg["run_finetuning"]:
             logger.info("\n" + "━" * 60 + "\n  STEP 5: Fine-tuning\n" + "━" * 60)
-            # run_finetuning loads the model internally, trains, saves adapter,
-            # and returns (peft_model, tokenizer) for the inference toggle.
             model, tokenizer, _ = run_finetuning(
                 cfg=cfg,
-                model=None,             # trainer loads internally when model=None
+                model=None,
                 tokenizer=None,
                 train_path=split_paths["train"],
                 val_path=split_paths["val"],
                 business_eval=business_eval,
             )
+            # Free the fine-tuned model from VRAM immediately.
+            # Inference reloads the base model fresh — if the fine-tuned model
+            # is still in memory when the fresh load starts, both copies compete
+            # for VRAM and OOM on large models (8B+) even with 4-bit quantisation.
+            logger.info("[pipeline] Releasing fine-tuned model from VRAM before inference ...")
+            del model, tokenizer
+            _clear_device_cache()
         else:
             logger.info("[pipeline] Skipping fine-tuning.")
-            model, tokenizer = None, None
 
     # ═════════════════════════════════════════════════════════════════════════
     # INFERENCE STEPS  (always after fine-tuning in the same pipeline run)
