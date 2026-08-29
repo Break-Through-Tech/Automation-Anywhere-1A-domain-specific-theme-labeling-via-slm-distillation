@@ -9,7 +9,7 @@
 #   "colab"       — CUDA + QLoRA (bitsandbytes + Unsloth). Use on Colab T4.
 #   "local_mps"   — Apple MPS + LoRA bfloat16 (no quantisation). Use on M1/M5 Mac.
 #   "local_cpu"   — CPU + LoRA float32 (smoke test only, very slow). Use anywhere.
-device_mode: "local_mps"   # change to "colab" when running on Colab
+device_mode: "colab"   # change to "colab" when running on Colab
 
 # ── Reproducibility ───────────────────────────────────────────────────────────
 seed: 42
@@ -54,7 +54,7 @@ dataset:
   domain:        "IT"                              # IT | HR | CX
   # Bitext categories used as IT proxy:
   it_categories: ["ACCOUNT", "TECHNICAL_SUPPORT", "DELIVERY", "CONTACT"]
-  n_samples:     500                               # number of tickets to use
+  n_samples:     2000                               # number of tickets to use
   text_column:   "instruction"                     # Bitext's ticket text column
   label_column:  "category"                        # used for EDA only, not for training
 
@@ -120,13 +120,13 @@ student_slm:
   #   "HuggingFaceTB/SmolLM2-1.7B-Instruct"               (1.7B, in-between)
   #   "HuggingFaceTB/SmolLM2-360M-Instruct"               (0.36B, fastest)
 
-  model_id:  "HuggingFaceTB/SmolLM2-360M-Instruct"
+  model_id:  "Qwen/Qwen2.5-7B-Instruct"
   max_seq_length: 2048                             # max tokens per training example
 
 # ── LoRA / QLoRA configuration ───────────────────────────────────────────────
 lora:
-  r:               16        # rank — controls adapter expressiveness
-  lora_alpha:      16        # scaling factor (set equal to r as starting point)
+  r:               32        # rank — controls adapter expressiveness
+  lora_alpha:      32        # scaling factor (set equal to r as starting point)
   lora_dropout:    0.05
   bias:            "none"
   target_modules:  "all-linear"
@@ -139,7 +139,7 @@ qlora:                       # used only in "colab" device_mode
 
 # ── Training (SFTConfig) ──────────────────────────────────────────────────────
 training:
-  num_train_epochs:              3
+  num_train_epochs:              5
   per_device_train_batch_size:   4
   gradient_accumulation_steps:   4        # effective batch size = 16
   learning_rate:                 2.0e-4
@@ -176,13 +176,13 @@ evaluation:
   # true            — inference on ALL clusters (train + val + test). Shows
   #                   training and validation metrics alongside test metrics,
   #                   enabling overfitting analysis in metrics_summary.csv.
-  eval_all_splits: false
+  eval_all_splits: true
 
   # ── Cosine similarity (PRIMARY metric — always runs) ──────────────────────
   embedding_model: "all-mpnet-base-v2"
 
   # ── BERTScore (SECONDARY metric — OFF by default for local/Phase 1) ───────
-  run_bertscore: false
+  run_bertscore: true
   bertscore_model: "roberta-large"
 
   # ── LLM-as-Judge ──────────────────────────────────────────────────────────
@@ -214,7 +214,7 @@ evaluation:
 inference:
   # Path to the LoRA adapter from a completed training run.
   # Example: "outputs/20260819_2347_SmolLM2-1.7B-Instruct_ep6/models/lora_adapter"
-  adapter_dir: "outputs/20260821_2216_Meta-Llama-3.1-8B-Instruct_ep5/models/lora_adapter"
+  adapter_dir: null
 
   # Path to a plain text file with one support ticket per line.
   # Example: "demo_tickets.txt"
