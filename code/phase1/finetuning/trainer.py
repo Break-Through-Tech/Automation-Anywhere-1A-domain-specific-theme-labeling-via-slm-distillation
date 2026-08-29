@@ -402,6 +402,20 @@ def _count_trainable(model) -> int:
 
 
 def _is_unsloth_model(model) -> bool:
+    """
+    Return True if the model already has LoRA adapters applied.
+    Covers both Unsloth-applied adapters and standard PEFT adapters.
+
+    After Unsloth's get_peft_model(), the model type becomes
+    peft.peft_model.PeftModelForCausalLM — not an Unsloth type — so
+    checking the module name alone misses it and causes double-LoRA.
+    """
+    try:
+        from peft import PeftModel
+        if isinstance(model, PeftModel):
+            return True
+    except ImportError:
+        pass
     return "unsloth" in type(model).__module__.lower()
 
 
