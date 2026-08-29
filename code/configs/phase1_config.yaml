@@ -166,9 +166,9 @@ split:
 evaluation:
   # ── Re-run evaluations on an existing trained model ───────────────────────
   # Set to the run directory path to skip all training and run only evaluations.
-  # Example: "outputs/20260819_2347_SmolLM2-1.7B-Instruct_ep6"
+  # Example: "/content/drive/MyDrive/slm-distillation/outputs/20260819_2347_SmolLM2-1.7B-Instruct_ep6"
   # Leave null for a normal training + evaluation run.
-  existing_run_dir: "outputs/20260829_0610_Mistral-7B-Instruct-v0.3_ep5"
+  existing_run_dir: "/content/drive/MyDrive/slm-distillation/outputs/20260829_0610_Mistral-7B-Instruct-v0.3_ep5"
 
   # ── Which clusters to run SLM inference on ────────────────────────────────
   # false (default) — inference only on TEST clusters. Faster; produces 3–5
