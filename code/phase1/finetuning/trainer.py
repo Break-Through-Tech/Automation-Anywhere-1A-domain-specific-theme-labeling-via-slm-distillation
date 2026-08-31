@@ -32,24 +32,34 @@ logger = logging.getLogger(__name__)
 
 # ── Public: load model ────────────────────────────────────────────────────────
 
-def load_model_and_tokenizer(cfg: dict):
+def load_model_and_tokenizer(cfg: dict, training: bool = False):
     """
     Load the student SLM and tokenizer with hardware-appropriate settings.
-    Returns (model, tokenizer).
+
+    Parameters
+    ----------
+    training : bool
+        When True (called from run_finetuning), applies LoRA adapters via Unsloth
+        so the model is ready for fine-tuning.
+        When False (called for inference), loads the clean base model with NO LoRA
+        so that trained adapters can be applied cleanly via PeftModel.from_pretrained.
+        This separation is critical: loading Unsloth's untrained LoRA before
+        PeftModel.from_pretrained causes adapter conflicts and masks trained weights.
     """
     device_mode = cfg["device_mode"]
     model_id    = cfg["student_slm"]["model_id"].strip()
-    cfg["student_slm"]["model_id"] = model_id          # persist the stripped value
+    cfg["student_slm"]["model_id"] = model_id
     hf_cache    = cfg["paths"].get("hf_cache", None)
 
     if hf_cache:
         os.environ["HF_HOME"] = hf_cache
         logger.info(f"[trainer] HF model cache → {hf_cache}")
 
-    logger.info(f"[trainer] Loading {model_id} in mode={device_mode} ...")
+    mode_label = "training" if training else "inference"
+    logger.info(f"[trainer] Loading {model_id} in mode={device_mode} ({mode_label}) ...")
 
     if device_mode == "colab":
-        model, tokenizer = _load_colab(model_id, cfg)
+        model, tokenizer = _load_colab(model_id, cfg, training=training)
     elif device_mode == "local_mps":
         model, tokenizer = _load_mps(model_id, cfg)
     elif device_mode == "local_cpu":
@@ -91,7 +101,7 @@ def run_finetuning(
     # Load model internally if pipeline passes model=None
     if model is None:
         logger.info("[trainer] Loading model for fine-tuning ...")
-        model, tokenizer = load_model_and_tokenizer(cfg)
+        model, tokenizer = load_model_and_tokenizer(cfg, training=True)
 
     # Apply LoRA — skip if Unsloth already applied it during model load
     if not _is_unsloth_model(model):
@@ -202,8 +212,14 @@ def generate_label(
 
 # ── Private: device-specific model loaders ────────────────────────────────────
 
-def _load_colab(model_id: str, cfg: dict):
-    """QLoRA with 4-bit NF4 quantisation. Tries Unsloth first, falls back to PEFT."""
+def _load_colab(model_id: str, cfg: dict, training: bool = False):
+    """
+    QLoRA with 4-bit NF4 quantisation. Tries Unsloth first, falls back to PEFT.
+
+    training=True  : applies get_peft_model so the model is ready for fine-tuning.
+    training=False : returns the clean 4-bit base model with NO LoRA adapters,
+                     so trained adapters can be applied cleanly via PeftModel.from_pretrained.
+    """
     from transformers import AutoTokenizer
 
     qlora_cfg      = cfg["qlora"]
@@ -218,15 +234,22 @@ def _load_colab(model_id: str, cfg: dict):
             max_seq_length=cfg["student_slm"]["max_seq_length"],
             load_in_4bit=qlora_cfg["load_in_4bit"],
         )
-        model = FastLanguageModel.get_peft_model(
-            model,
-            r=lora_cfg["r"],
-            lora_alpha=lora_cfg["lora_alpha"],
-            target_modules=target_modules,
-            lora_dropout=lora_cfg["lora_dropout"],
-            bias=lora_cfg["bias"],
-            use_gradient_checkpointing="unsloth",
-        )
+        if training:
+            # Apply LoRA only for training — NOT for inference.
+            # Applying get_peft_model before PeftModel.from_pretrained causes
+            # adapter slot conflicts and masks trained weights with untrained ones.
+            model = FastLanguageModel.get_peft_model(
+                model,
+                r=lora_cfg["r"],
+                lora_alpha=lora_cfg["lora_alpha"],
+                target_modules=target_modules,
+                lora_dropout=lora_cfg["lora_dropout"],
+                bias=lora_cfg["bias"],
+                use_gradient_checkpointing="unsloth",
+            )
+            logger.info("[trainer] LoRA adapters applied (training mode).")
+        else:
+            logger.info("[trainer] Clean base model loaded without LoRA (inference mode).")
         return model, tokenizer
 
     except ImportError:
@@ -402,6 +425,20 @@ def _count_trainable(model) -> int:
 
 
 def _is_unsloth_model(model) -> bool:
+    """
+    Return True if the model already has LoRA adapters applied.
+    Covers both Unsloth-applied adapters and standard PEFT adapters.
+
+    After Unsloth's get_peft_model(), the model type becomes
+    peft.peft_model.PeftModelForCausalLM — not an Unsloth type — so
+    checking the module name alone misses it and causes double-LoRA.
+    """
+    try:
+        from peft import PeftModel
+        if isinstance(model, PeftModel):
+            return True
+    except ImportError:
+        pass
     return "unsloth" in type(model).__module__.lower()
 
 

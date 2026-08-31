@@ -226,17 +226,13 @@ def _add_bertscore(
     """
     Compute BERTScore and add columns to results_df.
 
-    Skipped when run_bertscore=False (default for Phase 1 local runs) because:
-      - Requires downloading a 1.4–3 GB model.
-      - Known OverflowError on Python 3.14 with the tokenizers Rust library.
-      - Very slow on CPU.
-
-    Enable in configs/phase1_config.yaml under evaluation.run_bertscore: true
-    when running on Colab with GPU.
+    Loads the scoring model ONCE using BERTScorer, then batches all
+    same-prompt and multi-reference computations in two passes.
+    This avoids the 500+ model reload problem caused by using bert_score.score()
+    per prediction.
     """
     from phase1.data.schema import EVAL_BERTSCORE_SAME, EVAL_BERTSCORE_MULTI
 
-    # ── Skip if disabled in config ────────────────────────────────────────────
     if not run_bertscore:
         logger.info(
             "[metrics] BERTScore skipped (run_bertscore: false in config). "
@@ -246,21 +242,25 @@ def _add_bertscore(
         results_df[EVAL_BERTSCORE_MULTI] = None
         return results_df
 
-    # ── Compute BERTScore ─────────────────────────────────────────────────────
-    from bert_score import score as bert_score_fn
-    from phase1.data.schema import (
-        PRED_CLUSTER_ID, PRED_PROMPT_ID, PRED_GENERATED_LABEL,
-        cluster_name_col,
-    )
+    from bert_score import BERTScorer
+    from phase1.data.schema import PRED_CLUSTER_ID, PRED_PROMPT_ID, PRED_GENERATED_LABEL
 
-    logger.info(f"[metrics] Computing BERTScore with {bertscore_model} ...")
+    logger.info(f"[metrics] Computing BERTScore with {bertscore_model} (loading model once) ...")
     teacher_lookup = _build_teacher_lookup(labeled_df, model_id)
     device         = _bert_score_device()
 
-    same_scores  = []
-    multi_scores = []
-
     try:
+        # Load roberta-large (or configured model) once for the entire evaluation
+        scorer = BERTScorer(
+            model_type=bertscore_model,
+            device=device,
+            verbose=False,
+        )
+        logger.info(f"[metrics] BERTScorer loaded on {device}. Scoring {len(results_df)} predictions ...")
+
+        same_scores  = []
+        multi_scores = []
+
         for _, row in results_df.iterrows():
             cid = int(row[PRED_CLUSTER_ID])
             pid = row[PRED_PROMPT_ID]
@@ -270,44 +270,29 @@ def _add_bertscore(
             same_ref     = cluster_refs.get(pid, "")
             all_refs     = [v for v in cluster_refs.values() if v]
 
-            # Same-prompt BERTScore
+            # Same-prompt score: one call, no model reload
             if same_ref:
-                _, _, F = bert_score_fn(
-                    [gen], [same_ref],
-                    model_type=bertscore_model,
-                    verbose=False,
-                    device=device,
-                )
+                _, _, F = scorer.score([gen], [same_ref])
                 same_scores.append(float(F.mean()))
             else:
                 same_scores.append(0.0)
 
-            # Multi-reference BERTScore (max over all references)
+            # Multi-reference score: one call per reference, no model reload
             if all_refs:
-                ref_scores = []
-                for ref in all_refs:
-                    _, _, F = bert_score_fn(
-                        [gen], [ref],
-                        model_type=bertscore_model,
-                        verbose=False,
-                        device=device,
-                    )
-                    ref_scores.append(float(F.mean()))
+                ref_scores = [float(scorer.score([gen], [ref])[2].mean())
+                              for ref in all_refs]
                 multi_scores.append(max(ref_scores))
             else:
                 multi_scores.append(0.0)
 
         results_df[EVAL_BERTSCORE_SAME]  = same_scores
         results_df[EVAL_BERTSCORE_MULTI] = multi_scores
+        logger.info("[metrics] BERTScore complete.")
 
     except (OverflowError, RuntimeError, Exception) as e:
         logger.warning(
-            f"[metrics] BERTScore computation failed: {type(e).__name__}: {e}\n"
-            "Common causes:\n"
-            "  - Python 3.14 + tokenizers Rust library incompatibility (OverflowError)\n"
-            "  - CUDA out of memory\n"
-            "Workaround: set run_bertscore: false in phase1_config.yaml.\n"
-            "BERTScore columns will be None for this run."
+            f"[metrics] BERTScore failed: {type(e).__name__}: {e}\n"
+            "Setting BERTScore columns to None."
         )
         results_df[EVAL_BERTSCORE_SAME]  = None
         results_df[EVAL_BERTSCORE_MULTI] = None

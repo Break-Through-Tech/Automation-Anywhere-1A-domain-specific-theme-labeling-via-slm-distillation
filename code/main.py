@@ -35,6 +35,34 @@ def _setup_logging(log_level: str = "INFO") -> None:
         handlers=[logging.StreamHandler(sys.stdout)],
     )
 
+    # Suppress noisy third-party loggers.
+    # These produce hundreds of lines (HTTP requests, weight load reports,
+    # deprecation notices) that obscure the pipeline's own progress logs.
+    # Set WARNING so genuine errors from these libraries still surface.
+    _quiet = [
+        "httpx",                          # HuggingFace HTTP request logs
+        "httpcore",                        # underlying HTTP transport
+        "huggingface_hub",                 # model/dataset download chatter
+        "huggingface_hub.file_download",
+        "huggingface_hub.repocard",
+        "transformers",                    # weight loading, config parsing
+        "transformers.modeling_utils",
+        "transformers.configuration_utils",
+        "transformers.tokenization_utils_base",
+        "transformers.trainer",            # keep training steps but not init noise
+        "datasets",                        # dataset loading logs
+        "filelock",                        # lock file acquisition logs
+        "accelerate",                      # device placement logs
+        "peft",                            # adapter loading reports
+        "trl",                             # SFTTrainer init logs
+        "unsloth",                         # Unsloth patch/compile logs
+        "bert_score",                      # BERTScore model loading
+        "sentence_transformers",           # embedding model loading
+        "torch",                           # PyTorch internal logs
+    ]
+    for name in _quiet:
+        logging.getLogger(name).setLevel(logging.WARNING)
+
 
 # ── Config helpers ────────────────────────────────────────────────────────────
 
