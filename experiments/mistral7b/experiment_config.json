@@ -1,0 +1,26 @@
+{
+  "model_id": "mistralai/Mistral-7B-Instruct-v0.3",
+  "method": "4-bit QLoRA",
+  "lora_r": 16,
+  "lora_alpha": 16,
+  "lora_dropout": 0.05,
+  "target_modules": [
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "gate_proj",
+    "up_proj",
+    "down_proj"
+  ],
+  "train_examples": 70,
+  "val_examples": 15,
+  "test_examples": 20,
+  "system_role_supported": true,
+  "min_train_tokens": 250,
+  "median_train_tokens": 276,
+  "max_train_tokens": 326,
+  "prompt_format": "Mistral native chat template",
+  "system_prompt_strategy": "merged_into_user_message",
+  "system_prompt_preserved": true
+}

@@ -1,0 +1,14 @@
+{
+  "train_runtime": 392.4776,
+  "train_samples_per_second": 0.535,
+  "train_steps_per_second": 0.069,
+  "total_flos": 2506386908602368.0,
+  "train_loss": 0.8506239950656891,
+  "epoch": 3.0,
+  "model_id": "mistralai/Mistral-7B-Instruct-v0.3",
+  "max_length": 384,
+  "epochs": 3,
+  "learning_rate": 0.0002,
+  "train_batch_size": 1,
+  "gradient_accumulation_steps": 8
+}

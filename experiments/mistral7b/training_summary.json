@@ -1,0 +1,13 @@
+{
+  "model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "training_status": "successful",
+  "epochs": 3,
+  "train_loss": 0.8506239950656891,
+  "validation_loss_epoch_1": 0.844448,
+  "validation_loss_epoch_2": 0.809085,
+  "validation_loss_epoch_3": 0.896229,
+  "best_epoch": 2,
+  "best_validation_loss": 0.809085,
+  "best_checkpoint": "/content/drive/MyDrive/slm-distillation/outputs/mistral7b/training/checkpoint-18",
+  "observation": "Validation loss improved through epoch 2 and increased at epoch 3, indicating mild overfitting."
+}

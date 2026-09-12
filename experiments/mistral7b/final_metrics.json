@@ -1,0 +1,17 @@
+{
+  "model": "mistralai/Mistral-7B-Instruct-v0.3",
+  "training_status": "successful",
+  "best_epoch": 2,
+  "best_validation_loss": 0.809085,
+  "baseline_cosine_similarity": 0.767267505,
+  "finetuned_cosine_similarity": 0.731793181,
+  "cosine_change": -0.035474323999999946,
+  "finetuned_better_examples": 8,
+  "baseline_better_examples": 12,
+  "llm_judge_finetuned_wins": 10,
+  "llm_judge_baseline_wins": 10,
+  "llm_judge_ties": 0,
+  "baseline_judge_score": 3.4,
+  "finetuned_judge_score": 3.25,
+  "overall_result": "baseline_performed_slightly_better"
+}
