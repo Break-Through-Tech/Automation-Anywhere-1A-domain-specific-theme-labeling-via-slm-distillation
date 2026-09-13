@@ -1,0 +1,13 @@
+{
+  "model": "Qwen/Qwen2.5-3B-Instruct",
+  "training_status": "successful",
+  "epochs": 3,
+  "train_loss": 1.5123535814108673,
+  "validation_loss_epoch_1": 1.532189,
+  "validation_loss_epoch_2": 0.995797,
+  "validation_loss_epoch_3": 0.8789467215538025,
+  "best_epoch": 3,
+  "best_validation_loss": 0.8789467215538025,
+  "best_checkpoint": "/content/drive/MyDrive/slm-distillation/outputs/qwen25_3b/training/checkpoint-27",
+  "observation": "Validation loss improved across all three epochs, with epoch 3 producing the best validation loss."
+}

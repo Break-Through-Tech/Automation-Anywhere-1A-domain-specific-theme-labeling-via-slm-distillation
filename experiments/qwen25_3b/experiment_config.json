@@ -1,0 +1,25 @@
+{
+  "model_id": "Qwen/Qwen2.5-3B-Instruct",
+  "method": "4-bit QLoRA",
+  "prompt_format": "Qwen native chat template",
+  "system_prompt_strategy": "native system role",
+  "system_prompt_preserved": true,
+  "train_examples": 70,
+  "val_examples": 15,
+  "test_examples": 20,
+  "min_train_tokens": 238,
+  "median_train_tokens": 261,
+  "max_train_tokens": 309,
+  "lora_r": 16,
+  "lora_alpha": 16,
+  "lora_dropout": 0.05,
+  "target_modules": [
+    "q_proj",
+    "k_proj",
+    "v_proj",
+    "o_proj",
+    "gate_proj",
+    "up_proj",
+    "down_proj"
+  ]
+}

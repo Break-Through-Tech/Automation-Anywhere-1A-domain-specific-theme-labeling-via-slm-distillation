@@ -1,0 +1,18 @@
+{
+  "model": "Qwen/Qwen2.5-3B-Instruct",
+  "training_status": "successful",
+  "best_epoch": 3,
+  "best_checkpoint": "checkpoint-27",
+  "best_validation_loss": 0.8789467215538025,
+  "baseline_cosine_similarity": 0.7252018655000001,
+  "finetuned_cosine_similarity": 0.8077393550000002,
+  "cosine_change": 0.08253748950000006,
+  "finetuned_better_examples": 17,
+  "baseline_better_examples": 3,
+  "llm_judge_finetuned_wins": 15,
+  "llm_judge_baseline_wins": 5,
+  "llm_judge_ties": 0,
+  "baseline_judge_score": 2.85,
+  "finetuned_judge_score": 3.8,
+  "overall_result": "finetuning_improved_performance"
+}

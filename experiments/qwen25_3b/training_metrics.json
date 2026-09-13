@@ -1,0 +1,14 @@
+{
+  "train_runtime": 213.8052,
+  "train_samples_per_second": 0.982,
+  "train_steps_per_second": 0.126,
+  "total_flos": 928515189178368.0,
+  "train_loss": 1.5123535814108673,
+  "epoch": 3.0,
+  "model_id": "Qwen/Qwen2.5-3B-Instruct",
+  "max_length": 384,
+  "epochs": 3,
+  "learning_rate": 0.0002,
+  "train_batch_size": 1,
+  "gradient_accumulation_steps": 8
+}

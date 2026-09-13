@@ -110,3 +110,57 @@ stored outside GitHub.
 
 <!-- MISTRAL7B_RESULTS_END -->
 
+<!-- QWEN25_3B_RESULTS_START -->
+
+## Qwen2.5-3B-Instruct
+
+**Model:** `Qwen/Qwen2.5-3B-Instruct`
+
+**Method:** 4-bit QLoRA
+
+### Training
+
+- Training examples: 70
+- Validation examples: 15
+- Test examples: 20
+- Epochs: 3
+- LoRA rank: 16
+- LoRA alpha: 16
+- LoRA dropout: 0.05
+- Learning rate: 2e-4
+- Max sequence length: 384
+- Best epoch: 3
+- Best checkpoint: `checkpoint-27`
+- Best validation loss: 0.8789
+
+Validation loss improved across all three epochs:
+
+- Epoch 1: 1.5322
+- Epoch 2: 0.9958
+- Epoch 3: 0.8789
+
+### Cosine Similarity
+
+- Baseline: **0.7252**
+- Fine-tuned: **0.8077**
+- Improvement: **+0.0825**
+- Fine-tuned better: **17/20**
+- Baseline better: **3/20**
+
+### LLM-as-a-Judge
+
+Using Claude Haiku 4.5:
+
+- Fine-tuned wins: **15**
+- Baseline wins: **5**
+- Ties: **0**
+- Baseline average score: **2.85**
+- Fine-tuned average score: **3.80**
+
+### Conclusion
+
+Qwen2.5-3B showed a clear positive response to QLoRA fine-tuning.
+The fine-tuned model improved semantic similarity from 0.7252 to
+0.8077 and was preferred by the LLM judge on 15 of 20 test examples.
+
+<!-- QWEN25_3B_RESULTS_END -->
