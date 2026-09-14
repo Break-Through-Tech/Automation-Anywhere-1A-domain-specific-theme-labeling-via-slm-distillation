@@ -9,7 +9,7 @@
 #   "colab"       — CUDA + QLoRA (bitsandbytes + Unsloth). Use on Colab T4.
 #   "local_mps"   — Apple MPS + LoRA bfloat16 (no quantisation). Use on M1/M5 Mac.
 #   "local_cpu"   — CPU + LoRA float32 (smoke test only, very slow). Use anywhere.
-device_mode: "local_mps"   # change to "colab" when running on Colab
+device_mode: "colab" #"local_mps"   # change to "colab" when running on Colab
 
 # ── Reproducibility ───────────────────────────────────────────────────────────
 seed: 42
@@ -120,7 +120,7 @@ student_slm:
   #   "HuggingFaceTB/SmolLM2-1.7B-Instruct"               (1.7B, in-between)
   #   "HuggingFaceTB/SmolLM2-360M-Instruct"               (0.36B, fastest)
 
-  model_id:  "HuggingFaceTB/SmolLM2-360M-Instruct"
+  model_id: "meta-llama/Llama-3.2-3B-Instruct" #"HuggingFaceTB/SmolLM2-360M-Instruct"
   max_seq_length: 2048                             # max tokens per training example
 
 # ── LoRA / QLoRA configuration ───────────────────────────────────────────────
@@ -182,7 +182,7 @@ evaluation:
   embedding_model: "all-mpnet-base-v2"
 
   # ── BERTScore (SECONDARY metric — OFF by default for local/Phase 1) ───────
-  run_bertscore: false
+  run_bertscore: true
   bertscore_model: "roberta-large"
 
   # ── LLM-as-Judge ──────────────────────────────────────────────────────────
