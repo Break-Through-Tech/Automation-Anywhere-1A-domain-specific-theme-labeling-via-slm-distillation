@@ -1,0 +1,28 @@
+{
+  "model": "meta-llama/Llama-3.2-3B-Instruct",
+  "validation_history": [
+    {
+      "epoch": 1.0,
+      "step": 5,
+      "eval_loss": 1.9151766300201416,
+      "eval_runtime": 2.4276,
+      "eval_samples_per_second": 6.179
+    },
+    {
+      "epoch": 2.0,
+      "step": 10,
+      "eval_loss": 1.4048839807510376,
+      "eval_runtime": 1.8641,
+      "eval_samples_per_second": 8.047
+    },
+    {
+      "epoch": 3.0,
+      "step": 15,
+      "eval_loss": 1.2854087352752686,
+      "eval_runtime": 2.0146,
+      "eval_samples_per_second": 7.446
+    }
+  ],
+  "best_epoch": 3,
+  "best_validation_loss": 1.2854087352752686
+}

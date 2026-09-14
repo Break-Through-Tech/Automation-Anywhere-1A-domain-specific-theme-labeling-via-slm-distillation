@@ -1,0 +1,10 @@
+{
+  "model": "meta-llama/Llama-3.2-3B-Instruct",
+  "phase": 1,
+  "device_mode": "colab",
+  "num_samples": 500,
+  "epochs": 3,
+  "finetuning_method": "QLoRA",
+  "bertscore_enabled": true,
+  "run_id": "20260914_0241_Llama-3.2-3B-Instruct_ep3"
+}

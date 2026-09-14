@@ -1,0 +1,12 @@
+{
+  "model": "meta-llama/Llama-3.2-3B-Instruct",
+  "training_status": "successful",
+  "epochs_completed": 3,
+  "global_steps": 15,
+  "best_epoch": 3,
+  "best_global_step": 15,
+  "best_validation_loss": 1.2854087352752686,
+  "best_checkpoint": "checkpoint-15",
+  "train_batch_size": 4,
+  "total_flos": 1082694584463360.0
+}
