@@ -71,3 +71,26 @@ The fine-tuned Gemma 3 4B model improved on every quality metric compared with i
 ## Notes / Issues Hit
 
 Hit a bug during dataset construction: `AttributeError: 'Gemma3Processor' object has no attribute 'encode'` in `dataset.py` (line ~194). Gemma 3 loads with a Processor object rather than a plain tokenizer, which the pipeline didn't originally account for. Patched locally by calling `.tokenizer.encode()` when a `.tokenizer` attribute is present, and pushed the fix to branch `btt_setup_mt`. Other teammates fine-tuning Gemma-family models will likely hit the same error.
+
+# Qwen3 8B Smoke Test Results
+
+## Status: BLOCKED — Out of Memory on T4
+
+## Model
+- Student model: `Qwen/Qwen3-8B`
+- Fine-tuning method: QLoRA / LoRA (4-bit)
+- GPU: Tesla T4 (14.56 GB VRAM)
+
+## What happened
+Pipeline successfully loaded the model and began fine-tuning setup, but failed with `torch.OutOfMemoryError` during LoRA adapter injection. The pipeline appears to load the full model into GPU memory twice (once during dataset/tokenizer setup, again during actual fine-tuning) without freeing the first copy. This fits for smaller models (e.g. Gemma 3 4B) but exceeds the T4's 14.5GB budget for an 8B model.
+
+## Fixes attempted
+- Forced `device_map={"": 0}` to prevent automatic CPU/disk offload (fixed the first error)
+- Reduced `per_device_train_batch_size` from 4 → 1, increased `gradient_accumulation_steps` to compensate
+- Reduced `max_seq_length` from 2048 → 1024
+- Restarted Colab runtime to clear stale GPU memory
+
+Still hit `CUDA out of memory` — tried to allocate a final 2 MiB with 14.39/14.56 GB already in use.
+
+## Conclusion
+Qwen3 8B, as currently implemented in this pipeline, does not fit on a free-tier Colab T4 GPU.
