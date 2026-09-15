@@ -36,3 +36,5 @@ code/hf_cache/
 hf_cache/
 *.pkl
 .BTT_env/
+
+unsloth_compiled_cache/
