@@ -191,7 +191,7 @@ def _build_examples(
             )
 
             # Length check (skip if too long)
-            token_len = len(tokenizer.encode(text))
+            token_len = len((tokenizer.tokenizer if hasattr(tokenizer, 'tokenizer') else tokenizer).encode(text))
             if token_len > max_seq:
                 skipped += 1
                 continue
