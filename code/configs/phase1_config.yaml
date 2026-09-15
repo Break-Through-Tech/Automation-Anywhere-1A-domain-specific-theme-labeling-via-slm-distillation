@@ -120,7 +120,7 @@ student_slm:
   #   "HuggingFaceTB/SmolLM2-1.7B-Instruct"               (1.7B, in-between)
   #   "HuggingFaceTB/SmolLM2-360M-Instruct"               (0.36B, fastest)
 
-  model_id: ""Qwen/Qwen3-8B"" #"meta-llama/Llama-3.2-3B-Instruct" #"HuggingFaceTB/SmolLM2-360M-Instruct"
+  model_id: "Qwen/Qwen3-8B" #"meta-llama/Llama-3.2-3B-Instruct" #"HuggingFaceTB/SmolLM2-360M-Instruct"
   max_seq_length: 2048                             # max tokens per training example
 
 # ── LoRA / QLoRA configuration ───────────────────────────────────────────────
