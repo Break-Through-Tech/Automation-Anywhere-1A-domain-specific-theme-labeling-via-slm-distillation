@@ -121,7 +121,7 @@ student_slm:
   #   "HuggingFaceTB/SmolLM2-360M-Instruct"               (0.36B, fastest)
 
   model_id: "Qwen/Qwen3-8B" #"meta-llama/Llama-3.2-3B-Instruct" #"HuggingFaceTB/SmolLM2-360M-Instruct"
-  max_seq_length: 384 #2048                             # max tokens per training example
+  max_seq_length: 2048                             # max tokens per training example
 
 # ── LoRA / QLoRA configuration ───────────────────────────────────────────────
 lora:
@@ -140,8 +140,8 @@ qlora:                       # used only in "colab" device_mode
 # ── Training (SFTConfig) ──────────────────────────────────────────────────────
 training:
   num_train_epochs:              3
-  per_device_train_batch_size:   1 #4
-  gradient_accumulation_steps:   16 #4        # effective batch size = 16
+  per_device_train_batch_size:   4
+  gradient_accumulation_steps:   4        # effective batch size = 16
   learning_rate:                 2.0e-4
   lr_scheduler_type:             "cosine"
   warmup_ratio:                  0.05
