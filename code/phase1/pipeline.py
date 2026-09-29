@@ -175,7 +175,13 @@ def run_phase1(cfg: dict) -> None:
         val_path   = processed_dir / FILE_VAL_JSONL
 
         # We need a tokenizer for dataset construction; load a temp one
-        _, tokenizer_tmp = load_model_and_tokenizer(cfg)
+        from transformers import AutoTokenizer
+        tokenizer_tmp = AutoTokenizer.from_pretrained(
+            cfg["student_slm"]["model_id"].strip()
+        )
+        if tokenizer_tmp.pad_token is None:
+            tokenizer_tmp.pad_token = tokenizer_tmp.eos_token
+        tokenizer_tmp.padding_side = "right" 
         if pipe_cfg["run_finetuning"] or not train_path.exists():
             logger.info("\n" + "━" * 60 + "\n  STEP 4: Building dataset\n" + "━" * 60)
             split_paths = build_dataset(cfg, labeled_df, tokenizer_tmp)
@@ -240,6 +246,23 @@ def run_phase1(cfg: dict) -> None:
         for cid in cluster_set:
             split_map[int(cid)] = split_name
 
+    # PHI_EVALUATION_SPLIT_SELECTION
+    requested_splits = cfg.get("evaluation", {}).get("inference_splits")
+    if requested_splits is not None:
+        if (
+            not isinstance(requested_splits, list)
+            or not requested_splits
+            or any(s not in split_clusters for s in requested_splits)
+        ):
+            raise ValueError("Invalid evaluation.inference_splits")
+        inference_cluster_ids = set().union(
+            *(split_clusters[s] for s in requested_splits)
+        )
+        logger.info(
+            "[pipeline] Selected evaluation splits: %s; clusters: %s",
+            requested_splits, len(inference_cluster_ids)
+        )
+
     run_any_inference = (
         pipe_cfg["run_baseline_eval"] or pipe_cfg["run_finetuned_eval"]
     )
@@ -268,7 +291,7 @@ def run_phase1(cfg: dict) -> None:
                 business_eval=business_eval,
             )
             # Free memory before loading fine-tuned model
-            del base_model
+            del base_model, base_tok
             _clear_device_cache()
 
         # ── 6b: Fine-tuned inference (base model + LoRA adapter) ──────────────
@@ -290,7 +313,7 @@ def run_phase1(cfg: dict) -> None:
                     fine_tuned=True, output_path=str(finetuned_preds_path),
                     business_eval=business_eval,
                 )
-                del ft_model
+                del ft_model, ft_base, ft_tok
                 _clear_device_cache()
             else:
                 logger.warning(

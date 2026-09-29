@@ -1,0 +1,10 @@
+split,model,equivalence,faithfulness,specificity,composite
+train,teacher,,,,
+train,baseline,,,,
+train,finetuned,,,,
+val,teacher,5.0,5.0,5.0,5.0
+val,baseline,3.6666666666666665,4.533333333333333,3.8,3.9999999999999996
+val,finetuned,3.8,4.533333333333333,3.8,4.044444444444443
+test,teacher,,,,
+test,baseline,,,,
+test,finetuned,,,,

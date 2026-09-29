@@ -95,6 +95,17 @@ def run_finetuning(
 
     # Apply LoRA — skip if Unsloth already applied it during model load
     if not _is_unsloth_model(model):
+        if getattr(model, "is_loaded_in_4bit", False):
+            from peft import prepare_model_for_kbit_training
+            model = prepare_model_for_kbit_training(
+                model,
+                use_gradient_checkpointing=train_cfg[
+                    "gradient_checkpointing"
+                ],
+                gradient_checkpointing_kwargs={
+                    "use_reentrant": False
+                },
+            )
         peft_config = LoraConfig(
             r=lora_cfg["r"],
             lora_alpha=lora_cfg["lora_alpha"],
@@ -160,6 +171,8 @@ def run_finetuning(
         business_eval.record_finetuning_time(elapsed)
 
     logger.info(f"[trainer] Training finished in {elapsed / 60:.1f} min.")
+    for adapter_config in trainer.model.peft_config.values():
+        adapter_config.base_model_name_or_path = model_id
     trainer.save_model(str(out_dir))
     tokenizer.save_pretrained(str(out_dir))
     logger.info(f"[trainer] LoRA adapter saved to {out_dir}")
@@ -203,45 +216,31 @@ def generate_label(
 # ── Private: device-specific model loaders ────────────────────────────────────
 
 def _load_colab(model_id: str, cfg: dict):
-    """QLoRA with 4-bit NF4 quantisation. Tries Unsloth first, falls back to PEFT."""
-    from transformers import AutoTokenizer
-
-    qlora_cfg      = cfg["qlora"]
-    lora_cfg       = cfg["lora"]
-    target_modules = _resolve_target_modules(model_id, lora_cfg["target_modules"])
-
-    try:
-        from unsloth import FastLanguageModel
-        logger.info("[trainer] Unsloth detected — using accelerated loading.")
-        model, tokenizer = FastLanguageModel.from_pretrained(
-            model_name=model_id,
-            max_seq_length=cfg["student_slm"]["max_seq_length"],
-            load_in_4bit=qlora_cfg["load_in_4bit"],
-        )
-        model = FastLanguageModel.get_peft_model(
-            model,
-            r=lora_cfg["r"],
-            lora_alpha=lora_cfg["lora_alpha"],
-            target_modules=target_modules,
-            lora_dropout=lora_cfg["lora_dropout"],
-            bias=lora_cfg["bias"],
-            use_gradient_checkpointing="unsloth",
-        )
-        return model, tokenizer
-
-    except ImportError:
-        logger.info("[trainer] Unsloth not found — using standard HuggingFace QLoRA.")
-
-    from transformers import AutoModelForCausalLM, BitsAndBytesConfig
-
-    bnb_config = BitsAndBytesConfig(
-        load_in_4bit=qlora_cfg["load_in_4bit"],
-        bnb_4bit_quant_type="nf4",
-        bnb_4bit_compute_dtype=torch.bfloat16,
-        bnb_4bit_use_double_quant=qlora_cfg["use_double_quant"],
+    """Load a clean quantized base model; attach adapters separately."""
+    from transformers import (
+        AutoTokenizer, AutoModelForCausalLM, BitsAndBytesConfig
     )
-    model     = AutoModelForCausalLM.from_pretrained(
-        model_id, quantization_config=bnb_config, device_map="auto"
+
+    dtype = (
+        torch.bfloat16
+        if torch.cuda.is_bf16_supported()
+        else torch.float16
+    )
+    qcfg = cfg["qlora"]
+
+    quantization = BitsAndBytesConfig(
+        load_in_4bit=qcfg["load_in_4bit"],
+        bnb_4bit_quant_type=qcfg.get("bnb_4bit_quant_type", "nf4"),
+        bnb_4bit_compute_dtype=dtype,
+        bnb_4bit_use_double_quant=qcfg["use_double_quant"],
+    )
+
+    model = AutoModelForCausalLM.from_pretrained(
+        model_id,
+        quantization_config=quantization,
+        device_map={"": torch.cuda.current_device()},
+        dtype=dtype,
+        attn_implementation="sdpa",
     )
     tokenizer = AutoTokenizer.from_pretrained(model_id)
     return model, tokenizer
@@ -277,51 +276,40 @@ def _load_cpu(model_id: str, cfg: dict):
 
 # ── Private: SFTTrainer builder ───────────────────────────────────────────────
 
-def _build_sft_trainer(model, tokenizer, train_ds, val_ds, training_args, cfg):
-    """
-    Build SFTTrainer handling both old and new trl / transformers APIs.
+def _build_sft_trainer(
+    model, tokenizer, train_ds, val_ds, training_args, cfg
+):
+    """Pass sequence length through TRL's supported SFTConfig."""
+    from trl import SFTConfig, SFTTrainer
 
-    trl < 0.15  : SFTTrainer(tokenizer=..., max_seq_length=..., dataset_text_field=...)
-    trl >= 0.15 : 'tokenizer' renamed to 'processing_class'
+    supported = {
+        name for name, field in SFTConfig.__dataclass_fields__.items()
+        if field.init
+    }
+    values = {
+        key: value
+        for key, value in training_args.to_dict().items()
+        if key in supported
+    }
+    values.update(
+        max_length=cfg["student_slm"]["max_seq_length"],
+        dataset_text_field="text",
+        packing=False,
+        completion_only_loss=False,
+        assistant_only_loss=False,
+    )
 
-    Strategy: try 'processing_class' first, fall back to 'tokenizer'.
-    Other unexpected kwargs are removed one at a time until the call succeeds.
-    """
-    from trl import SFTTrainer
-
-    max_seq_len    = cfg["student_slm"]["max_seq_length"]
-    tokenizer_keys = ["processing_class", "tokenizer"]
-
-    for tok_key in tokenizer_keys:
-        kwargs = {
-            "model":              model,
-            tok_key:              tokenizer,
-            "train_dataset":      train_ds,
-            "eval_dataset":       val_ds,
-            "args":               training_args,
-            "max_seq_length":     max_seq_len,
-            "dataset_text_field": "text",
-        }
-        for _ in range(len(kwargs) + 1):
-            try:
-                trainer = SFTTrainer(**kwargs)
-                logger.info(f"[trainer] SFTTrainer built (tokenizer param='{tok_key}').")
-                return trainer
-            except TypeError as exc:
-                match = re.search(r"unexpected keyword argument '([^']+)'", str(exc))
-                if not match:
-                    break   # non-param TypeError — try next tok_key
-                bad = match.group(1)
-                if bad == tok_key:
-                    logger.info(f"[trainer] SFTTrainer rejected '{tok_key}' — trying alternative.")
-                    break   # switch tokenizer key
-                logger.warning(f"[trainer] SFTTrainer rejected param '{bad}' — removing.")
-                kwargs.pop(bad, None)
-
-    raise RuntimeError(
-        "[trainer] Could not construct SFTTrainer.\n"
-        f"  trl={_ver('trl')}  transformers={_ver('transformers')}  "
-        f"Python={__import__('sys').version.split()[0]}"
+    sft_args = SFTConfig(**values)
+    logger.info(
+        "[trainer] SFT max_length=%s",
+        sft_args.max_length,
+    )
+    return SFTTrainer(
+        model=model,
+        args=sft_args,
+        processing_class=tokenizer,
+        train_dataset=train_ds,
+        eval_dataset=val_ds,
     )
 
 
@@ -426,3 +414,5 @@ def _ver(pkg: str) -> str:
         return __import__(pkg).__version__
     except Exception:
         return "?"
+
+# PHI_TRAINER_COMPAT_FIX_V1

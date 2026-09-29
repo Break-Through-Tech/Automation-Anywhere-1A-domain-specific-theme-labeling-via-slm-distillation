@@ -1,0 +1,10 @@
+split,model,cosine_sim_same,cosine_sim_multi,rouge_l_same,rouge_l_multi,bertscore_f1_same,bertscore_f1_multi
+train,teacher,,,,,,
+train,baseline,,,,,,
+train,finetuned,,,,,,
+val,teacher,1.0000000754992167,1.0000000754992167,1.0,1.0,1.0,1.0
+val,baseline,0.772747419277827,0.8354417204856872,0.5028752293458175,0.6598857351798529,0.9163369456926982,0.936996869246165
+val,finetuned,0.7526885847250621,0.8713829040527343,0.4995346592405416,0.6620138031902737,0.915842084089915,0.9408075928688049
+test,teacher,,,,,,
+test,baseline,,,,,,
+test,finetuned,,,,,,
