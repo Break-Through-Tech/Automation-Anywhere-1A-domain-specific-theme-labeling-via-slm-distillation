@@ -199,7 +199,7 @@ def run_phase1(cfg: dict) -> None:
         before fine-tuning starts.
         """
       
-        del temp_model, tokenizer_tm   # free memory before loading model properly
+        del temp_model, tokenizer_tmp   # free memory before loading model properly
         _clear_device_cache()
 
         # ── STEP 5: Fine-tuning ───────────────────────────────────────────────
