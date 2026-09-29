@@ -174,8 +174,10 @@ def run_phase1(cfg: dict) -> None:
         train_path = processed_dir / FILE_TRAIN_JSONL
         val_path   = processed_dir / FILE_VAL_JSONL
 
-        # We need a tokenizer for dataset construction; load a temp one
-        _, tokenizer_tmp = load_model_and_tokenizer(cfg)
+        # We need a tokenizer for dataset construction; load a temp one.
+        # Capture and free the model too, not just the tokenizer — otherwise
+        # it silently stays in GPU memory and Step 5 OOMs loading it again.
+        model_tmp, tokenizer_tmp = load_model_and_tokenizer(cfg)
         if pipe_cfg["run_finetuning"] or not train_path.exists():
             logger.info("\n" + "━" * 60 + "\n  STEP 4: Building dataset\n" + "━" * 60)
             split_paths = build_dataset(cfg, labeled_df, tokenizer_tmp)
@@ -186,7 +188,8 @@ def run_phase1(cfg: dict) -> None:
                 "test":  str(processed_dir / FILE_TEST_JSONL),
             }
             logger.info("[pipeline] Using existing JSONL splits.")
-        del tokenizer_tmp   # free memory before loading model properly
+        del model_tmp, tokenizer_tmp   # free memory before loading model properly
+        _clear_device_cache()
 
         # ── STEP 5: Fine-tuning ───────────────────────────────────────────────
         if pipe_cfg["run_finetuning"]:
