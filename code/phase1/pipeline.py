@@ -186,7 +186,20 @@ def run_phase1(cfg: dict) -> None:
                 "test":  str(processed_dir / FILE_TEST_JSONL),
             }
             logger.info("[pipeline] Using existing JSONL splits.")
-        del tokenizer_tmp   # free memory before loading model properly
+          
+        """
+        Originally, only tokenizer_tmp was deleted here.
+        While running Qwen3-8B on a Tesla T4, I received a VRAM-related error.
+        The model was loaded once as temp_model for dataset/tokenizer setup, and then
+        run_finetuning() attempted to load Qwen3-8B again because model=None and
+        tokenizer=None were passed.
+        Since temp_model was still occupying GPU memory, the second model load caused
+        the VRAM issue. I changed this section to delete both temp_model and tokenizer_tmp
+        before clearing the device cache, so the temporary model is released from VRAM
+        before fine-tuning starts.
+        """
+      
+        del temp_model, tokenizer_tm   # free memory before loading model properly
         _clear_device_cache()
 
         # ── STEP 5: Fine-tuning ───────────────────────────────────────────────
