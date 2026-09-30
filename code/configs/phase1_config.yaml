@@ -127,7 +127,7 @@ student_slm:
 lora:
   r:               16        # rank — controls adapter expressiveness
   lora_alpha:      16        # scaling factor (set equal to r as starting point)
-  lora_dropout:    0 #0.05
+  lora_dropout:    0.05
   bias:            "none"
   target_modules:  "all-linear"
   task_type:       "CAUSAL_LM"
