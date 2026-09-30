@@ -85,7 +85,7 @@ def run_live_demo(cfg: dict, adapter_dir: str, prompt_id: str = "P1") -> None:
     # ── Load fine-tuned SLM ───────────────────────────────────────────────────
     print(f"Loading fine-tuned SLM from {adapter_dir} ...", flush=True)
     t0 = time.time()
-    ft_base, _ = load_model_and_tokenizer(cfg)
+    #ft_base, _ = load_model_and_tokenizer(cfg)
     ft_model   = PeftModel.from_pretrained(ft_base, str(adapter_dir))
     ft_model.eval()
     ft_load_s  = time.time() - t0
