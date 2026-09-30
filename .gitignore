@@ -36,3 +36,7 @@ code/hf_cache/
 hf_cache/
 *.pkl
 .BTT_env/
+.env
+
+# Raw per-run eval outputs (downloaded from Drive)
+results/raw/
