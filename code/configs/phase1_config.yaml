@@ -176,13 +176,13 @@ evaluation:
   # true            — inference on ALL clusters (train + val + test). Shows
   #                   training and validation metrics alongside test metrics,
   #                   enabling overfitting analysis in metrics_summary.csv.
-  eval_all_splits: false
+  eval_all_splits: true
 
   # ── Cosine similarity (PRIMARY metric — always runs) ──────────────────────
   embedding_model: "all-mpnet-base-v2"
 
   # ── BERTScore (SECONDARY metric — OFF by default for local/Phase 1) ───────
-  run_bertscore: false
+  run_bertscore: true
   bertscore_model: "roberta-large"
 
   # ── LLM-as-Judge ──────────────────────────────────────────────────────────
