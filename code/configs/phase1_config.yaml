@@ -54,7 +54,7 @@ dataset:
   domain:        "IT"                              # IT | HR | CX
   # Bitext categories used as IT proxy:
   it_categories: ["ACCOUNT", "TECHNICAL_SUPPORT", "DELIVERY", "CONTACT"]
-  n_samples:     500                               # number of tickets to use
+  n_samples:     1000                              # number of tickets to use
   text_column:   "instruction"                     # Bitext's ticket text column
   label_column:  "category"                        # used for EDA only, not for training
 
@@ -125,8 +125,8 @@ student_slm:
 
 # ── LoRA / QLoRA configuration ───────────────────────────────────────────────
 lora:
-  r:               16        # rank — controls adapter expressiveness
-  lora_alpha:      16        # scaling factor (set equal to r as starting point)
+  r:               32        # rank — controls adapter expressiveness
+  lora_alpha:      32        # scaling factor (set equal to r as starting point)
   lora_dropout:    0.05
   bias:            "none"
   target_modules:  "all-linear"
@@ -139,10 +139,10 @@ qlora:                       # used only in "colab" device_mode
 
 # ── Training (SFTConfig) ──────────────────────────────────────────────────────
 training:
-  num_train_epochs:              3
+  num_train_epochs:              7
   per_device_train_batch_size:   4
   gradient_accumulation_steps:   4        # effective batch size = 16
-  learning_rate:                 2.0e-4
+  learning_rate:                 1.0e-4
   lr_scheduler_type:             "cosine"
   warmup_ratio:                  0.05
   bf16:                          true     # bfloat16 on Colab and M1 MPS
