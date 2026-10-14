@@ -203,3 +203,68 @@ Increasing epochs and learning rate together made results worse, not better. Lik
 
 ## Next Steps
 Isolate the two variables — test 6 epochs with the original learning rate (2e-4) alone to determine whether epochs or learning rate (or their combination) caused the regression. Also worth considering: increasing the training dataset size, since 70 examples is a small foundation for fine-tuning regardless of hyperparameters.
+
+# Gemma 3 4B — Larger Dataset Run
+**Date: Oct 13, 2026**
+
+## Status: COMPLETE — Score crossed 4.0, but baseline also scored above 4.0
+
+## Model
+- Student model: `google/gemma-3-4b-it`
+- Fine-tuning method: QLoRA / LoRA
+- GPU: Tesla T4
+- LoRA rank: 16
+- LoRA alpha: 16
+- LoRA dropout: 0.05
+
+## Dataset
+- Tickets requested: 1000 (up from ~500)
+- Total clusters: ~38 (190 teacher calls ÷ 5 prompts)
+- Test clusters: 7 (35 predictions ÷ 5 prompts), up from 4
+- Training epochs: 3, learning rate 2e-4 (same as original run)
+
+## Training Result
+- Training completed successfully
+- Fine-tuning time: 5.6 min
+- Model loading time: 53.3s (fine-tuned), 50.6s (baseline)
+- Run ID: `20261013_2309_gemma-3-4b-it_ep3`
+
+## Baseline vs Fine-Tuned Evaluation
+
+### Cosine Similarity (test split)
+| Model | Same-cluster | Multi-cluster |
+|---|---:|---:|
+| Teacher (Claude Haiku) | 1.0000 | 1.0000 |
+| Baseline SLM | 0.8201 | 0.8791 |
+| Fine-tuned SLM | 0.8237 | 0.8752 |
+
+Change (same-cluster): **+0.0036**
+
+### ROUGE-L (test split)
+| Model | Same-cluster | Multi-cluster |
+|---|---:|---:|
+| Teacher | 1.0000 | 1.0000 |
+| Baseline SLM | 0.5322 | 0.6393 |
+| Fine-tuned SLM | 0.5758 | 0.7124 |
+
+### LLM-as-a-Judge (test split)
+| Metric | Teacher | Baseline SLM | Fine-tuned SLM |
+|---|---:|---:|---:|
+| Equivalence | 5.00 | 3.89 | 3.97 |
+| Faithfulness | 5.00 | 4.69 | 4.69 |
+| Specificity | 5.00 | 3.89 | 3.89 |
+| Composite | 5.00 | 4.15 | 4.18 |
+
+## Business Evaluation
+| Metric | Teacher (Claude Haiku) | Student SLM (Gemma 3 4B) |
+|---|---:|---:|
+| Mean latency | 0.65s / call | 1.562s / label (fine-tuned) |
+| Total calls | 190 | — |
+| Estimated cost | $0.0247 USD | ~$0.00 (local/Colab) |
+| Speed vs. teacher | — | 0.4x teacher's speed (slower) |
+
+## Conclusion
+The fine-tuned model reached a composite of 4.18, but the untrained baseline scored 4.15 on the same test set, so fine-tuning added only a small gain. The larger dataset changed the test clusters (4 → 7), so this score can't be compared directly to the original 3.89. ROUGE-L showed the clearest improvement from fine-tuning (+0.04 to +0.07). The judge also rejected its temperature setting during this run, so scoring was not fully deterministic.
+
+## Notes
+The pipeline prints "faster" in its speed comparison, but 0.4x means Gemma is slower per label than the teacher. Its advantage is cost, not speed.
