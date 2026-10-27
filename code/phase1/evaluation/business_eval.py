@@ -338,9 +338,25 @@ class BusinessEvaluator:
     # ── Private ───────────────────────────────────────────────────────────────
 
     def _compute_cost_rows(self) -> list[dict]:
+        # n_calls  = len(self._label_records)
+        # est_cost = _estimate_cost(self.model_id, n_calls)
+        # return [
+        #     {
+        #         "metric":      "teacher_llm_estimated_cost_usd",
+        #         "value":       est_cost,
+        #         "unit":        "USD",
+        #         "description": f"Estimated API cost for {n_calls} label generation calls",
+        #     },
+        #     {
+        #         "metric":      "slm_inference_estimated_cost_usd",
+        #         "value":       0.0,
+        #         "unit":        "USD",
+        #         "description": "SLM inference cost (local GPU/Colab = ~$0)",
+        #     },
+      
         n_calls  = len(self._label_records)
         est_cost = _estimate_cost(self.model_id, n_calls)
-        return [
+        rows = [
             {
                 "metric":      "teacher_llm_estimated_cost_usd",
                 "value":       est_cost,
@@ -348,12 +364,35 @@ class BusinessEvaluator:
                 "description": f"Estimated API cost for {n_calls} label generation calls",
             },
             {
-                "metric":      "slm_inference_estimated_cost_usd",
-                "value":       0.0,
-                "unit":        "USD",
-                "description": "SLM inference cost (local GPU/Colab = ~$0)",
+                "metric":      "teacher_llm_cost_per_1k_labels_usd",
+                "value":       _estimate_cost(self.model_id, 1000),
+                "unit":        "USD per 1000 labels",
+                "description": f"Teacher LLM ({self.model_id}) API cost for 1000 labels",
             },
         ]
+
+        # SLM cloud cost per 1000 labels, for each model and each cloud
+        for fine_tuned in [False, True]:
+            tag = "finetuned" if fine_tuned else "baseline"
+            latencies = [
+                r["elapsed_s"] for r in self._inference_records
+                if r["fine_tuned"] == fine_tuned
+            ]
+            if not latencies:
+                continue
+            mean_latency = sum(latencies) / len(latencies)
+
+            for instance, hourly in GPU_HOURLY_USD.items():
+                rows.append({
+                    "metric":      f"slm_cost_per_1k_labels_usd_{tag}_{instance}",
+                    "value":       _estimate_slm_cost_per_1k(mean_latency, hourly),
+                    "unit":        "USD per 1000 labels",
+                    "description": (
+                        f"SLM ({tag}) on {instance} at ${hourly}/hr, "
+                        f"mean latency {mean_latency:.2f}s"
+                    ),
+                })
+        return rows
 
 def _estimate_cost(model_id: str, n_calls: int) -> float:
     """Estimate teacher LLM cost in USD with separate input/output prices."""
