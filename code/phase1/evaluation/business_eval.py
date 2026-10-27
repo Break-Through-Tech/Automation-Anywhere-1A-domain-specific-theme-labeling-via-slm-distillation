@@ -34,9 +34,6 @@ import pandas as pd
 
 logger = logging.getLogger(__name__)
 
-# Approximate cost constants (USD per 1M tokens as of 2026)
-# Update these if pricing changes.
-
 # Approximate cost constants (USD per 1M tokens, checked Oct 2026)
 # Input and output tokens have different prices, so we store both.
 # Update these if pricing changes.
@@ -349,13 +346,6 @@ class BusinessEvaluator:
                 "description": "SLM inference cost (local GPU/Colab = ~$0)",
             },
         ]
-
-
-# def _estimate_cost(model_id: str, n_calls: int) -> float:
-#     """Rough cost estimate in USD."""
-#     rate = COST_PER_1M_TOKENS.get(model_id, 1.0)  # fallback $1/1M
-#     total_tokens = n_calls * (AVG_INPUT_TOKENS_PER_CALL + AVG_OUTPUT_TOKENS_PER_CALL)
-#     return (total_tokens / 1_000_000) * rate
 
 def _estimate_cost(model_id: str, n_calls: int) -> float:
     """Estimate teacher LLM cost in USD with separate input/output prices."""
