@@ -36,10 +36,14 @@ logger = logging.getLogger(__name__)
 
 # Approximate cost constants (USD per 1M tokens as of 2026)
 # Update these if pricing changes.
+
+# Approximate cost constants (USD per 1M tokens, checked Oct 2026)
+# Input and output tokens have different prices, so we store both.
+# Update these if pricing changes.
 COST_PER_1M_TOKENS = {
-    "claude-haiku-4-5":   0.25,    # Anthropic Haiku
-    "gpt-4o-mini":         0.15,    # OpenAI GPT-4o-mini
-    "gpt-5.1":            10.00,    # placeholder for Phase 2
+    "claude-haiku-4-5": {"input": 1.00, "output": 5.00},    # Anthropic Haiku 4.5
+    "gpt-4o-mini":      {"input": 0.15, "output": 0.60},    # OpenAI GPT-4o-mini
+    "gpt-5.1":          {"input": 10.00, "output": 10.00},  # placeholder for Phase 2, verify before use
 }
 # Typical tokens per label generation call
 AVG_INPUT_TOKENS_PER_CALL  = 500   # system prompt + k tickets
@@ -347,8 +351,18 @@ class BusinessEvaluator:
         ]
 
 
+# def _estimate_cost(model_id: str, n_calls: int) -> float:
+#     """Rough cost estimate in USD."""
+#     rate = COST_PER_1M_TOKENS.get(model_id, 1.0)  # fallback $1/1M
+#     total_tokens = n_calls * (AVG_INPUT_TOKENS_PER_CALL + AVG_OUTPUT_TOKENS_PER_CALL)
+#     return (total_tokens / 1_000_000) * rate
+
 def _estimate_cost(model_id: str, n_calls: int) -> float:
-    """Rough cost estimate in USD."""
-    rate = COST_PER_1M_TOKENS.get(model_id, 1.0)  # fallback $1/1M
-    total_tokens = n_calls * (AVG_INPUT_TOKENS_PER_CALL + AVG_OUTPUT_TOKENS_PER_CALL)
-    return (total_tokens / 1_000_000) * rate
+    """Estimate teacher LLM cost in USD with separate input/output prices."""
+    rates = COST_PER_1M_TOKENS.get(model_id)
+    if rates is None:
+        logger.warning(f"[business_eval] No price for {model_id}, cost set to 0")
+        return 0.0
+    input_cost  = n_calls * AVG_INPUT_TOKENS_PER_CALL  * rates["input"]  / 1_000_000
+    output_cost = n_calls * AVG_OUTPUT_TOKENS_PER_CALL * rates["output"] / 1_000_000
+    return input_cost + output_cost
