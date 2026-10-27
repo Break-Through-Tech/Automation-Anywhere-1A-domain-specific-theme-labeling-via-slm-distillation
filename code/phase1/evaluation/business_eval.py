@@ -46,6 +46,14 @@ COST_PER_1M_TOKENS = {
 AVG_INPUT_TOKENS_PER_CALL  = 500   # system prompt + k tickets
 AVG_OUTPUT_TOKENS_PER_CALL = 20    # label is 5–15 words
 
+# Cloud GPU instance prices (USD per hour, on-demand, US region, checked Oct 2026)
+# Used to estimate what SLM inference would cost if deployed on the cloud.
+GPU_HOURLY_USD = {
+    "aws_g6.xlarge_L4":       0.80,   # AWS, 1x NVIDIA L4 (24GB)
+    "gcp_g2-standard-4_L4":   0.71,   # GCP, 1x NVIDIA L4 (24GB)
+    "azure_NC4as_T4_v3_T4":   0.53,   # Azure, 1x NVIDIA T4 (16GB)
+}
+
 
 class BusinessEvaluator:
     """Collects and reports business metrics throughout the pipeline."""
@@ -356,3 +364,11 @@ def _estimate_cost(model_id: str, n_calls: int) -> float:
     input_cost  = n_calls * AVG_INPUT_TOKENS_PER_CALL  * rates["input"]  / 1_000_000
     output_cost = n_calls * AVG_OUTPUT_TOKENS_PER_CALL * rates["output"] / 1_000_000
     return input_cost + output_cost
+
+def _estimate_slm_cost_per_1k(mean_latency_s: float, hourly_usd: float) -> float:
+    """
+    Estimate SLM cloud cost in USD for 1000 labels.
+    Assumes we only pay for the seconds the GPU is busy (ideal usage).
+    """
+    cost_per_second = hourly_usd / 3600
+    return cost_per_second * mean_latency_s * 1000
