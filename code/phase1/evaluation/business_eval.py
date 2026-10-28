@@ -307,6 +307,14 @@ class BusinessEvaluator:
         est_cost    = _estimate_cost(self.model_id, n_calls)
         speedup     = label_mean / ft_mean if ft_mean > 0 else float("inf")
 
+        # Cloud cost per 1000 labels for the fine-tuned SLM
+        cost_lines = ""
+        if ft_mean > 0:
+            cost_lines = "    Cloud cost per 1000 labels (fine-tuned):\n"
+            for instance, hourly in GPU_HOURLY_USD.items():
+                cost = _estimate_slm_cost_per_1k(ft_mean, hourly)
+                cost_lines += f"      {instance:<24}: ${cost:.4f}\n"
+
         # Model loading times (separate from per-label latency)
         load_lines = ""
         if self._model_load_times:
@@ -322,11 +330,12 @@ class BusinessEvaluator:
             f"    Mean call latency:   {label_mean:.2f}s\n"
             f"    Total API calls:     {n_calls}\n"
             f"    Estimated cost:      ${est_cost:.4f} USD\n"
+            f"    Cost per 1000 labels: ${_estimate_cost(self.model_id, 1000):.4f} USD\n"
             f"\n"
             f"  Student SLM ({self.slm_id}):{load_lines}"
             f"    Baseline inference:  {baseline_mean:.3f}s / label\n"
             f"    Fine-tuned inference:{ft_mean:.3f}s / label\n"
-            f"    Inference cost:      ~$0.00 (local/Colab)\n"
+            f"{cost_lines}"
             f"    Speed vs teacher:    {speedup:.1f}x faster\n"
         )
         if self._finetuning_time_s:
