@@ -1,0 +1,22 @@
+Comparison,Metric,Difference,95% CI Low,95% CI High,Exact p-value,Independent clusters
+Qwen fine-tuned minus Qwen baseline,Faithfulness,0.4000000000000001,-0.1999999999999997,1.0499999999999998,0.5,4
+Qwen fine-tuned minus Qwen baseline,Relevance,0.6,0.0,1.2,0.5,4
+Qwen fine-tuned minus Qwen baseline,Specificity,0.6499999999999999,0.1999999999999999,1.1,0.125,4
+Qwen fine-tuned minus Qwen baseline,Composite,0.5499850000000002,-1.0000000000065512e-05,1.0999800000000004,0.375,4
+Qwen fine-tuned minus Qwen baseline,Cosine Score,0.0992716454999999,0.0806944569999998,0.1267157834999999,0.125,4
+Qwen fine-tuned minus Qwen baseline,ROUGE,0.1247733475674651,0.0635003885003885,0.2070982448923625,0.125,4
+Qwen fine-tuned minus Qwen baseline,BertScore,0.0277628715,0.022021769,0.0337039530000001,0.125,4
+Claude teacher minus Qwen fine-tuned,Faithfulness,0.2999999999999999,0.0,0.5999999999999999,0.5,4
+Claude teacher minus Qwen fine-tuned,Relevance,0.05,0.0,0.1500000000000001,1.0,4
+Claude teacher minus Qwen fine-tuned,Specificity,0.15,-0.1499999999999998,0.5999999999999999,1.0,4
+Claude teacher minus Qwen fine-tuned,Composite,0.1666749999999999,0.0500099999999998,0.2499950000000002,0.25,4
+Claude teacher minus Qwen fine-tuned,Cosine Score,0.062502625,0.03733277,0.0902171705000001,0.125,4
+Claude teacher minus Qwen fine-tuned,ROUGE,0.1842541746179517,0.1299835407110949,0.2385248085248085,0.125,4
+Claude teacher minus Qwen fine-tuned,BertScore,0.0264899459999999,0.0151823554999999,0.0359335304999999,0.125,4
+Claude teacher minus Qwen baseline,Faithfulness,0.7000000000000001,0.1,1.55,0.25,4
+Claude teacher minus Qwen baseline,Relevance,0.65,0.0,1.35,0.5,4
+Claude teacher minus Qwen baseline,Specificity,0.7999999999999999,0.1999999999999999,1.6999999999999995,0.125,4
+Claude teacher minus Qwen baseline,Composite,0.7166600000000001,0.1000099999999997,1.3333100000000004,0.125,4
+Claude teacher minus Qwen baseline,Cosine Score,0.1617742705,0.123894718,0.199653823,0.125,4
+Claude teacher minus Qwen baseline,ROUGE,0.3090275221854169,0.1948560211718106,0.4376694358273306,0.125,4
+Claude teacher minus Qwen baseline,BertScore,0.0542528175,0.043872197,0.064633438,0.125,4

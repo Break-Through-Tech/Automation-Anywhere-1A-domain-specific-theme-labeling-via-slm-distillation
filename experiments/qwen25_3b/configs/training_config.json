@@ -1,0 +1,20 @@
+{
+  "model": "Qwen/Qwen2.5-3B-Instruct",
+  "run_type": "new retraining experiment",
+  "training_objective": "assistant-only",
+  "epochs": 3,
+  "learning_rate": 0.0002,
+  "warmup_steps": 3,
+  "batch_size": 1,
+  "gradient_accumulation_steps": 8,
+  "optimizer": "adamw_torch",
+  "scheduler": "linear",
+  "lora_r": 16,
+  "lora_alpha": 16,
+  "lora_dropout": 0.05,
+  "seed": 42,
+  "training_examples": 70,
+  "validation_examples": 15,
+  "held_out_test_examples": 20,
+  "gpu": "Tesla T4"
+}

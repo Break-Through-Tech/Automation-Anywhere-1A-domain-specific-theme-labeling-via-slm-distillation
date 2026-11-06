@@ -1,0 +1,5 @@
+{
+  "gpu_usd_per_hour": 0.35,
+  "vm_usd_per_hour": 0.189999,
+  "primary_assumed_utilization": 0.5
+}
